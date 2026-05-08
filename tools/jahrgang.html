@@ -164,9 +164,15 @@
                 </div>
 
                 <div class="jg-step-content" data-jg-step="5">
-                    <h2>Ausführen (PowerShell)</h2>
+                    <h2>Ausführen (Online oder PowerShell)</h2>
+                    <div class="filter-section" style="margin-bottom:20px;border:1px solid #dee2e6;border-radius:8px;padding:16px;background:#f8f9fa;">
+                        <h3 style="margin-top:0;">Microsoft Graph im Browser</h3>
+                        <button type="button" class="btn" id="jgOnlineLogin" onclick="window.ms365JahrgangGraphLogin && window.ms365JahrgangGraphLogin()"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
+                        <button type="button" class="btn btn-success" id="jgOnlineRun" onclick="window.ms365JahrgangGraphRun && window.ms365JahrgangGraphRun()" style="margin-left:8px;"><i class="bi bi-play-fill"></i>Jahrgangsgruppen jetzt anlegen</button>
+                        <div id="jgOnlineLog" style="margin-top:14px;max-height:220px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;line-height:1.45;"></div>
+                    </div>
                     <div class="alert alert-warning">
-                        <strong>Voraussetzungen:</strong> <code>Microsoft.Graph</code> (Graph) und optional <code>ExchangeOnlineManagement</code> (Exchange).
+                        <strong>Voraussetzungen (PowerShell):</strong> <code>Microsoft.Graph</code> (Graph) und optional <code>ExchangeOnlineManagement</code> (Exchange).
                     </div>
                     <h3>Generiertes Script</h3>
                     <div class="powershell-code">
@@ -209,6 +215,7 @@
     <script src="../src/tools/jahrgang/jahrgang-csv.js" defer></script>
     <script src="../src/tools/jahrgang/jahrgang-state.js" defer></script>
     <script src="../src/tools/jahrgang/jahrgang.js" defer></script>
+    <script src="../src/tools/jahrgang/jahrgang-graph.js" defer></script>
 </body>
 </html>
 

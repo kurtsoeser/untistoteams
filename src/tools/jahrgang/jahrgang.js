@@ -1038,6 +1038,42 @@
         return window.ms365BuildStandaloneJahrgangPs1(jgRows, getDomain(), standalone, createTeams, setExchangeSmtp);
     }
 
+    function parseJgMemberLinesText(raw) {
+        const lines = String(raw || '').split(/\r\n|\n|\r/);
+        const seen = new Set();
+        const out = [];
+        lines.forEach((line) => {
+            const t = String(line || '').trim();
+            if (!t || t.startsWith('#')) return;
+            const key = t.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            out.push(t);
+        });
+        return out;
+    }
+
+    window.ms365GetJahrgangSnapshotForGraph = function () {
+        const rows = (jgRows || []).map(function (r) {
+            const dn = normStr(r.displayName || '') || normStr(r.klasse);
+            const year = normStr(r.jahr || '');
+            return {
+                klasse: normStr(r.klasse),
+                jahr: year,
+                displayName: dn,
+                mailNick: normStr(r.mailNick),
+                owner: normStr(r.owner),
+                description: 'Jahrgangsgruppe ' + dn + ' (Abschluss ' + year + ')',
+                memberEmails: parseJgMemberLinesText(r.memberLines || '')
+            };
+        });
+        return {
+            rows,
+            createTeams: getJgCreateTeams(),
+            exchangeSmtp: getJgExchangeSmtp()
+        };
+    };
+
     function downloadJahrgangStandalonePackage() {
         if (!jgRows.length) {
             showToast('Keine Klassen – zuerst Klassenliste, Besitzer und Einstellungen abschließen.');
