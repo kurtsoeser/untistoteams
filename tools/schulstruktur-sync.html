@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Schulstruktur‑Sync</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .layout {
+            display: grid;
+            /* 2/3 links (Struktur), 1/3 rechts (Details) */
+            grid-template-columns: 2fr 1fr;
+            gap: 16px;
+            align-items: start;
+            padding-bottom: 28px;
+        }
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px; }
+        .muted { color: var(--muted); }
+
+        .tree-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .tree-actions .btn { margin: 0; padding: 10px 12px; border-radius: 10px; }
+        .small-btn { padding: 8px 10px !important; font-size: 0.92em; }
+
+        .tree-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .tree-filter label { display: block; font-weight: 700; color: #495057; margin-bottom: 6px; font-size: 0.92em; }
+        .tree-filter select, .tree-filter input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+        }
+
+        .tree {
+            margin: 12px 0 0;
+            padding: 0;
+            list-style: none;
+            max-height: 64vh;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .tree li { border-bottom: 1px solid #f0f1f3; }
+        .tree li:last-child { border-bottom: 0; }
+        .tree button {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+        }
+        .tree button:hover { background: rgba(94,114,228,0.06); }
+        .tree button[aria-current="true"] { background: rgba(94,114,228,0.10); }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e9ecef;
+            background: #fafbff;
+            color: #495057;
+            font-weight: 800;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+        .pill.ok { border-color: rgba(13,128,80,0.18); background: rgba(13,128,80,0.08); color: #0d8050; }
+        .pill.warn { border-color: rgba(133,100,4,0.22); background: rgba(255,193,7,0.12); color: #856404; }
+        .pill.err { border-color: rgba(176,0,32,0.22); background: rgba(176,0,32,0.07); color: #b00020; }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .stat {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .stat .n { font-weight: 900; font-size: 1.15em; color: #32325d; }
+        .stat .l { font-size: 0.88em; color: var(--muted); margin-top: 2px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        .field label { display: block; font-weight: 700; margin: 0 0 6px; color: #495057; }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .field textarea { min-height: 96px; resize: vertical; font-family: Consolas, 'Segoe UI', monospace; font-size: 0.92em; }
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .detail-actions .btn { margin: 0; }
+
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+        }
+    </style>
+</head>
+<body data-ms365-skip-tenant-domain-prompt="true">
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name">Schulstruktur‑Sync</span>
+            </div>
+            <p>Optische Übersicht &amp; Bearbeitung von Jahrgängen, Klassen, Arbeitsgemeinschaften und Gruppen. (Mock v1 – SharePoint‑Backend folgt.)</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                        <button type="button" class="btn" id="ssBtnExport"><i class="bi bi-download"></i>Export (JSON)</button>
+                        <label class="btn" for="ssImportFile" style="cursor:pointer;"><i class="bi bi-upload"></i>Import (JSON)</label>
+                        <input type="file" id="ssImportFile" accept="application/json,.json" style="display:none;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="layout">
+                <section class="panel" aria-label="Schulstruktur (Baumansicht)">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-diagram-3" style="margin-right:10px;"></i>Struktur</h2>
+                        <div class="tree-actions">
+                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:1;">
+                                <label for="ssAnsicht" style="font-weight:900;color:#32325d;">Ansicht</label>
+                                <select id="ssAnsicht" class="small-btn" style="padding:9px 10px;border-radius:10px;border:1px solid #ced4da;">
+                                    <option value="struktur" selected>Schulstruktur</option>
+                                    <option value="tenant">Tenant‑Gruppen/Teams (live)</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-success small-btn" id="ssBtnNeu"><i class="bi bi-plus-circle"></i>Neu</button>
+                            <button type="button" class="btn small-btn" id="ssBtnDemo"><i class="bi bi-stars"></i>Demo</button>
+                            <button type="button" class="btn btn-danger small-btn" id="ssBtnReset"><i class="bi bi-trash"></i>Zurücksetzen</button>
+                            <button type="button" class="btn small-btn" id="ssBtnTenantLogin" style="display:none;"><i class="bi bi-microsoft"></i>Anmelden</button>
+                            <button type="button" class="btn btn-success small-btn" id="ssBtnTenantLoad" style="display:none;"><i class="bi bi-cloud-download"></i>Tenant einlesen</button>
+                        </div>
+                        <div class="tree-filter" aria-label="Filter">
+                            <div>
+                                <label for="ssFilterSchuljahr">Schuljahr</label>
+                                <select id="ssFilterSchuljahr">
+                                    <option value="">(alle)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ssFilterTyp">Typ</label>
+                                <select id="ssFilterTyp">
+                                    <option value="">(alle)</option>
+                                    <option value="Jahrgang">Jahrgang</option>
+                                    <option value="Klasse">Klasse</option>
+                                    <option value="Arbeitsgemeinschaft">Arbeitsgemeinschaft</option>
+                                    <option value="Gruppe">Gruppe</option>
+                                </select>
+                            </div>
+                            <div style="grid-column:1 / -1;">
+                                <label for="ssFilterText">Suche</label>
+                                <input type="text" id="ssFilterText" placeholder="z. B. 1A, Robotik, Jg …" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="stats" aria-label="Übersicht">
+                            <li class="stat"><div class="n" id="ssStatEinheiten">–</div><div class="l">Einheiten</div></li>
+                            <li class="stat"><div class="n" id="ssStatAktiv">–</div><div class="l">aktiv</div></li>
+                            <li class="stat"><div class="n" id="ssStatAbweichung">–</div><div class="l">Abweichung</div></li>
+                            <li class="stat"><div class="n" id="ssStatFehler">–</div><div class="l">Fehler</div></li>
+                        </ul>
+
+                        <ul class="tree" id="ssTree" aria-label="Schulstruktur (Liste)"></ul>
+                        <p class="muted" id="ssModeHint" style="margin:10px 2px 0; font-size:0.92em;">
+                            Hinweis: Das ist die v1‑Mock‑Ansicht (lokal im Browser). Nächster Schritt: SharePoint‑Listen als Datenquelle.
+                        </p>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="Details">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-pencil-square" style="margin-right:10px;"></i>Details</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hint" id="ssHint">
+                            Links eine Einheit auswählen oder <strong>Neu</strong> klicken, um eine neue Klasse/Jahrgang/Arbeitsgemeinschaft/Gruppe anzulegen.
+                        </div>
+
+                        <div id="ssDetail" style="display:none;">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="ssBezeichnung">Bezeichnung</label>
+                                    <input type="text" id="ssBezeichnung" autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label for="ssTyp">Typ</label>
+                                    <select id="ssTyp">
+                                        <option value="Jahrgang">Jahrgang</option>
+                                        <option value="Klasse">Klasse</option>
+                                        <option value="Arbeitsgemeinschaft">Arbeitsgemeinschaft</option>
+                                        <option value="Gruppe">Gruppe</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="ssSchuljahr">Schuljahr</label>
+                                    <input type="text" id="ssSchuljahr" placeholder="z. B. 2026/27" autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label for="ssStatus">Status</label>
+                                    <select id="ssStatus">
+                                        <option value="Aktiv">Aktiv</option>
+                                        <option value="Inaktiv">Inaktiv</option>
+                                        <option value="Archiviert">Archiviert</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="ssUebergeordnet">Übergeordnete Einheit</label>
+                                    <select id="ssUebergeordnet">
+                                        <option value="">(keine)</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="ssSyncStatus">Letzter Sync‑Status</label>
+                                    <select id="ssSyncStatus">
+                                        <option value="Ausstehend">Ausstehend</option>
+                                        <option value="Ok">Ok</option>
+                                        <option value="Abweichung">Abweichung</option>
+                                        <option value="Fehler">Fehler</option>
+                                    </select>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="ssLetzteFehlermeldung">Letzte Fehlermeldung</label>
+                                    <textarea id="ssLetzteFehlermeldung" placeholder="optional – nur für Mock/Statusanzeigen"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="ssBtnSpeichern"><i class="bi bi-check2-circle"></i>Speichern</button>
+                                <button type="button" class="btn" id="ssBtnNeuUnter"><i class="bi bi-plus-circle"></i>Unterpunkt</button>
+                                <button type="button" class="btn btn-danger" id="ssBtnLoeschen"><i class="bi bi-trash"></i>Löschen</button>
+                            </div>
+                            <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
+                                Nächster Schritt (geplant): Mitglieder/Besitzer direkt hier pflegen (Entra‑Suche) + SharePoint‑Listen + M365‑Sync.
+                            </p>
+                        </div>
+
+                        <div id="ssTenantDetail" style="display:none;">
+                            <div class="hint" style="margin-bottom:12px;">
+                                Tenant‑Inventar ist aktuell <strong>nur lesend</strong>. Damit kannst du im Live‑Tenant gefahrlos sehen, was es bereits gibt.
+                            </div>
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="ssTenantName">Anzeigename</label>
+                                    <input type="text" id="ssTenantName" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="ssTenantArt">Art</label>
+                                    <input type="text" id="ssTenantArt" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="ssTenantMail">E‑Mail</label>
+                                    <input type="text" id="ssTenantMail" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="ssTenantAlias">Alias</label>
+                                    <input type="text" id="ssTenantAlias" readonly>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="ssTenantId">Gruppen‑ID</label>
+                                    <input type="text" id="ssTenantId" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script src="../src/tools/schulstruktur-sync/schulstruktur-sync.js" defer></script>
+</body>
+</html>
+

@@ -33,7 +33,8 @@ export default defineConfig(() => {
           weitereTeamsGruppenBesitzer: resolve(__dirname, 'tools/weitere-teams-gruppen-2-besitzer.html'),
           weitereTeamsGruppenMitglieder: resolve(__dirname, 'tools/weitere-teams-gruppen-3-mitglieder.html'),
           weitereTeamsGruppenEinstellungen: resolve(__dirname, 'tools/weitere-teams-gruppen-4-einstellungen.html'),
-          weitereTeamsGruppenAusfuehren: resolve(__dirname, 'tools/weitere-teams-gruppen-5-ausfuehren.html')
+          weitereTeamsGruppenAusfuehren: resolve(__dirname, 'tools/weitere-teams-gruppen-5-ausfuehren.html'),
+          schulstrukturSync: resolve(__dirname, 'tools/schulstruktur-sync.html')
         }
       }
     }
