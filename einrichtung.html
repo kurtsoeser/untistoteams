@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
+    <title>MS365-Schulverwaltung – Geführte Einrichtung</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="app.css">
+    <style>
+        .sw-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 18px 0 22px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sw-nav button {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.25);
+            background: #f8f9ff;
+            color: #32325d;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            margin: 0;
+            font: inherit;
+        }
+        .sw-nav button.active {
+            background: linear-gradient(135deg, var(--brand1) 0%, var(--brand2) 100%);
+            border-color: transparent;
+            color: #fff;
+        }
+        .sw-panel {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            background: #fff;
+            box-shadow: 0 10px 26px rgba(50, 50, 93, 0.08);
+        }
+        .sw-panel h2 {
+            margin: 0 0 10px;
+            font-size: 1.15em;
+            color: #32325d;
+        }
+        .sw-panel p.intro {
+            margin: 0 0 14px;
+            color: #495057;
+            line-height: 1.45;
+        }
+        .sw-field label {
+            display: block;
+            font-weight: 600;
+            margin: 10px 0 6px;
+            color: #495057;
+        }
+        .sw-field input[type="text"],
+        .sw-field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+        }
+        .sw-field textarea {
+            min-height: 140px;
+        }
+        .sw-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        #swSearchResults:empty { display: none; }
+        .sw-table-wrap { overflow-x: auto; margin-top: 14px; }
+        .sw-table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+        .sw-table-wrap th, .sw-table-wrap td {
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .sw-table-wrap th { background: #f8f9fa; font-weight: 800; }
+
+        /* Wie Schul‑Grundeinstellungen: Vorschau-Tabelle + Doppelklick */
+        .settings-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .settings-actions .btn {
+            margin: 0;
+            padding: 10px 14px;
+            border-radius: 10px;
+        }
+        .settings-actions input[type="file"] {
+            display: none;
+        }
+        .teachers-table-wrap {
+            margin-top: 10px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: auto;
+            background: #fff;
+        }
+        .teachers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92em;
+            min-width: 520px;
+        }
+        .teachers-table th,
+        .teachers-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .teachers-table th {
+            position: sticky;
+            top: 0;
+            background: var(--brand1);
+            color: #fff;
+            text-align: left;
+            font-weight: 700;
+            z-index: 1;
+        }
+        .teachers-table td code {
+            font-family: Consolas, 'Segoe UI', monospace;
+            background: #eef;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        .teachers-table .action-cell {
+            width: 1%;
+            white-space: nowrap;
+        }
+        .teachers-table thead th.action-cell {
+            text-align: right;
+        }
+        .teachers-table .mini-btn {
+            background: var(--danger1);
+            color: #fff;
+            border: 0;
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .cell-editor {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 11px;
+            border: 1px solid rgba(94, 114, 228, 0.45);
+            border-radius: 10px;
+            font: inherit;
+            font-size: 0.98em;
+            background: #fff;
+            color: var(--text);
+            outline: none;
+            line-height: 1.35;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .cell-editor:focus {
+            border-color: var(--brand1);
+            box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.22);
+        }
+
+        /* Schritt 3 Verwaltung: Name, E-Mail und freie Rolle – einheitlich (type=email sonst oft kantiger Browser-Look) */
+        #swStep3 .teachers-table input[data-sw-admin-name],
+        #swStep3 .teachers-table input[data-sw-admin-email],
+        #swStep3 .teachers-table input[data-sw-admin-role] {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 11px;
+            font: inherit;
+            font-size: 0.98em;
+            line-height: 1.4;
+            color: var(--text);
+            background: linear-gradient(180deg, #fcfdff 0%, #f6f8ff 100%);
+            border: 1px solid rgba(94, 114, 228, 0.38);
+            border-radius: 10px;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        #swStep3 .teachers-table input[data-sw-admin-name]::placeholder,
+        #swStep3 .teachers-table input[data-sw-admin-email]::placeholder,
+        #swStep3 .teachers-table input[data-sw-admin-role]::placeholder {
+            color: #8b95a8;
+        }
+        #swStep3 .teachers-table input[data-sw-admin-name]:hover,
+        #swStep3 .teachers-table input[data-sw-admin-email]:hover,
+        #swStep3 .teachers-table input[data-sw-admin-role]:hover {
+            border-color: rgba(94, 114, 228, 0.55);
+        }
+        #swStep3 .teachers-table input[data-sw-admin-name]:focus,
+        #swStep3 .teachers-table input[data-sw-admin-email]:focus,
+        #swStep3 .teachers-table input[data-sw-admin-role]:focus {
+            outline: none;
+            background: #fff;
+            border-color: var(--brand1);
+            box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.24);
+        }
+        #swStep3 .teachers-table td {
+            vertical-align: middle;
+        }
+
+        /* Sammelgruppe: Abgleich vs. Neuanlage (wie Grundeinstellungen-Tabs) */
+        .sw-grp-tabs {
+            margin-top: 4px;
+            padding: 14px 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: var(--soft, #f8f9fa);
+        }
+        .sw-grp-tabs .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0 0 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sw-grp-tabs .tab-btn {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.25);
+            background: #fff;
+            color: #32325d;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            font: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sw-grp-tabs .tab-btn[aria-selected="true"] {
+            background: linear-gradient(135deg, var(--brand1) 0%, var(--brand2) 100%);
+            border-color: transparent;
+            color: #fff;
+        }
+        .sw-grp-tabs .tab-panel {
+            display: none;
+            margin-top: 0;
+        }
+        .sw-grp-tabs .tab-panel.active {
+            display: block;
+        }
+        .sw-grp-tabs .tab-panel .sw-field:first-child label {
+            margin-top: 0;
+        }
+        .sw-wiz-stats {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--soft, #f8f9fa);
+            border: 1px solid var(--border);
+            font-size: 0.9em;
+            color: #495057;
+            line-height: 1.45;
+        }
+        .sw-next-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            margin-top: 16px;
+        }
+        .sw-next-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: linear-gradient(180deg, #fcfdff 0%, #f6f8ff 100%);
+            text-decoration: none;
+            color: #32325d;
+            box-shadow: 0 6px 18px rgba(50, 50, 93, 0.06);
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .sw-next-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(50, 50, 93, 0.12);
+            border-color: rgba(94, 114, 228, 0.35);
+        }
+        .sw-next-card__title {
+            font-weight: 800;
+            font-size: 1.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sw-next-card__title i {
+            font-size: 1.15em;
+            color: var(--brand1);
+        }
+        .sw-next-card__desc {
+            margin: 0;
+            font-size: 0.9em;
+            color: #495057;
+            line-height: 1.45;
+            flex: 1;
+        }
+        .sw-next-card__go {
+            font-size: 0.88em;
+            font-weight: 700;
+            color: var(--brand1);
+        }
+        .sw-smtp-preview-hint {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .sw-smtp-preview-hint code {
+            font-size: 0.95em;
+        }
+        .sw-owner-block {
+            margin-top: 4px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--soft, #f8f9fa);
+            border: 1px solid var(--border);
+        }
+        .sw-owner-block__title {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #32325d;
+        }
+        .sw-owner-block__hint {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+        .sw-owner-radios {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sw-owner-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .sw-owner-manual {
+            display: none;
+            width: 100%;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+        }
+        .sw-owner-manual.is-visible {
+            display: block;
+        }
+        .sw-owner-summary {
+            margin-top: 8px;
+            font-size: 0.88em;
+            color: var(--muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Assistent:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-signpost-2"></i>Geführte Einrichtung</span>
+            </div>
+            <p>Schritt für Schritt: Anmeldung, Schul‑Domain, <strong>Verwaltung</strong> (Kontakte inkl. Sammelgruppe), Lehrkräfte und Schüler:innen (jeweils inkl. Sammelgruppe), dann <strong>Fächer</strong> und <strong>ARGE</strong> als eigene Schritte (beide überspringbar), <strong>Klassen</strong>, abschließend eine <strong>Übersicht</strong> mit Vorschlägen für die weiteren Werkzeuge. Alle Daten bleiben lokal im Browser und werden von den anderen Werkzeugen mitverwendet.</p>
+            <p class="header-help-row"><a href="hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                        <a class="btn" href="tenant.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-sliders2-vertical"></i>Schul‑Grundeinstellungen</a>
+                        <a class="btn" href="tools/schueler-lehrer-gruppen.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-people"></i>Lehrerinnen &amp; Schülerinnen (Detail)</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content" style="padding-bottom:48px;">
+            <nav class="sw-nav" aria-label="Einrichtungsschritte">
+                <button type="button" data-sw-step="1" class="active" aria-selected="true"><i class="bi bi-microsoft"></i> 1. Anmeldung</button>
+                <button type="button" data-sw-step="2" aria-selected="false"><i class="bi bi-globe2"></i> 2. Schul‑Domain</button>
+                <button type="button" data-sw-step="3" aria-selected="false"><i class="bi bi-building-gear"></i> 3. Verwaltung</button>
+                <button type="button" data-sw-step="4" aria-selected="false"><i class="bi bi-person-badge"></i> 4. Lehrer:innen</button>
+                <button type="button" data-sw-step="5" aria-selected="false"><i class="bi bi-people"></i> 5. Schüler:innen</button>
+                <button type="button" data-sw-step="6" aria-selected="false"><i class="bi bi-book"></i> 6. Fächer</button>
+                <button type="button" data-sw-step="7" aria-selected="false"><i class="bi bi-diagram-3"></i> 7. ARGE</button>
+                <button type="button" data-sw-step="8" aria-selected="false"><i class="bi bi-mortarboard"></i> 8. Klassen</button>
+                <button type="button" data-sw-step="9" aria-selected="false"><i class="bi bi-ui-checks-grid"></i> 9. Übersicht</button>
+            </nav>
+
+            <div id="swStep1" class="sw-panel">
+                <h2>1. Als Administrator bei Microsoft anmelden</h2>
+                <p class="intro">Für die folgenden Schritte werden delegierte Microsoft‑Graph‑Rechte benötigt (z. B. <strong>Group.ReadWrite.All</strong>, <strong>User.Read.All</strong>) inkl. Administratorzustimmung.</p>
+                <p id="swAuthStatus" style="color:var(--muted);margin-bottom:12px;">Noch nicht angemeldet.</p>
+                <button type="button" class="btn btn-success" id="swBtnLogin"><i class="bi bi-box-arrow-in-right"></i>Bei Microsoft anmelden</button>
+            </div>
+
+            <div id="swStep2" class="sw-panel" style="display:none;">
+                <h2>2. E‑Mail‑Domain der Schule</h2>
+                <p class="intro">Die Domain wird für Gruppen‑E‑Mail‑Adressen und viele Werkzeuge verwendet (ohne <code>@</code>, z. B. <code>schule.kirche.at</code>).</p>
+                <div class="sw-field">
+                    <label for="swDomain">Schul‑Domain</label>
+                    <input type="text" id="swDomain" autocomplete="off" placeholder="beispielschule.at">
+                </div>
+                <div class="sw-toolbar">
+                    <button type="button" class="btn btn-success" id="swBtnSaveDomain"><i class="bi bi-floppy"></i>Speichern</button>
+                </div>
+            </div>
+
+            <div id="swStep3" class="sw-panel" style="display:none;">
+                <h2>3. Verwaltung und Sammelgruppe</h2>
+                <p class="intro">Kontakte der Schulverwaltung (wie im Tab <strong>Verwaltung</strong> unter <a href="tenant.html">Schul‑Grundeinstellungen → Listen</a>, Format <code>Rolle;Name;E‑Mail</code>): Standardrollen (anpassbar, löschbar) und <strong>weitere Rollen</strong>. Pro Zeile: <strong>Microsoft‑Abgleich</strong> (Entra) und optional <strong>Benutzer anlegen</strong> (Administratorzustimmung <code>User.ReadWrite.All</code>). Speichern übernimmt alles in die Einstellungen. Optional eine <strong>Microsoft‑365‑Sammelgruppe</strong> anlegen oder verknüpfen und Mitglieder synchronisieren.</p>
+                <div class="sw-field">
+                    <label>Verwaltung / Schulorganisation</label>
+                    <div class="teachers-table-wrap" aria-label="Verwaltungskontakte">
+                        <table class="teachers-table" aria-label="Rollen, Namen, E-Mails">
+                                <thead>
+                                    <tr>
+                                        <th>Rolle</th>
+                                        <th>Name</th>
+                                        <th>E‑Mail</th>
+                                        <th>Microsoft 365</th>
+                                        <th class="action-cell">Aktionen</th>
+                                    </tr>
+                                </thead>
+                            <tbody id="swAdminTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions" style="margin-top:10px;">
+                        <button type="button" class="btn" id="swBtnVerifyVerwaltungGraph" title="Alle gültigen E‑Mail‑Adressen in Entra ID prüfen"><i class="bi bi-microsoft"></i>E‑Mails mit Microsoft prüfen</button>
+                        <button type="button" class="btn" id="swBtnAdminRestoreDefaults" title="Die üblichen Standardrollen wieder als Zeilen einfügen (lokal speichern)"><i class="bi bi-arrow-counterclockwise"></i>Standardrollen einfügen</button>
+                        <button type="button" class="btn btn-success" id="swBtnAddAdminRoleRow"><i class="bi bi-plus-circle"></i>Weitere Rolle</button>
+                        <button type="button" class="btn btn-success" id="swBtnSaveAdmin"><i class="bi bi-floppy"></i>Verwaltung speichern</button>
+                    </div>
+                    <div id="swStatsVerwaltung" class="sw-wiz-stats" aria-live="polite"></div>
+                </div>
+
+                <hr style="margin:22px 0;border:0;border-top:1px solid var(--border);">
+
+                <p class="intro" style="margin-bottom:10px;"><strong>Microsoft‑365‑Gruppe</strong> für die Verwaltung: <strong>Standard ist eine neue Gruppe</strong>; per zweiter Registerkarte eine <strong>bestehende</strong> Gruppe suchen und verknüpfen.</p>
+                <div class="sw-grp-tabs">
+                    <div class="tabs" role="tablist" aria-label="Verwaltungs-Sammelgruppe: Vorgehen">
+                        <button type="button" class="tab-btn" id="swGrpTabBtnNewVerwaltung" role="tab" aria-selected="true" aria-controls="swGrpPanelNewVerwaltung"><i class="bi bi-plus-circle" aria-hidden="true"></i>Neue Gruppe anlegen</button>
+                        <button type="button" class="tab-btn" id="swGrpTabBtnMatchVerwaltung" role="tab" aria-selected="false" aria-controls="swGrpPanelMatchVerwaltung"><i class="bi bi-link-45deg" aria-hidden="true"></i>Bestehende Gruppe verknüpfen</button>
+                    </div>
+                    <div id="swGrpPanelNewVerwaltung" class="tab-panel active" role="tabpanel" aria-labelledby="swGrpTabBtnNewVerwaltung">
+                        <div class="sw-field">
+                            <label for="swNewDnVerwaltung">Anzeigename</label>
+                            <input type="text" id="swNewDnVerwaltung" maxlength="200" autocomplete="off">
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewNickVerwaltung">Alias / Mail‑Nickname</label>
+                            <input type="text" id="swNewNickVerwaltung" maxlength="60" autocomplete="off" spellcheck="false">
+                            <small id="swSmtpPreviewVerwaltung" class="sw-smtp-preview-hint" aria-live="polite"></small>
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewDescVerwaltung">Beschreibung</label>
+                            <input type="text" id="swNewDescVerwaltung" maxlength="512" autocomplete="off">
+                        </div>
+                        <div class="sw-field sw-owner-block">
+                            <span class="sw-owner-block__title">Gruppenbesitzer (Microsoft 365)</span>
+                            <small class="sw-owner-block__hint">Nach <strong>Anlegen</strong> oder <strong>Mitglieder synchronisieren</strong> werden diese Benutzer als <strong>Besitzer</strong> gesetzt (nur wenn die Adresse in Entra existiert).</small>
+                            <div class="sw-owner-radios">
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerVerwaltung" value="admin" checked> Alle Verwaltungs‑E‑Mails aus der Tabelle oben</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerVerwaltung" value="direktion"> Nur Direktion (Rolle „Direktion“ in der Verwaltungstabelle)</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerVerwaltung" value="manual"> Manuell (E‑Mails, Komma oder Zeilenumbruch)</label>
+                            </div>
+                            <textarea id="swOwnerManualVerwaltung" class="sw-owner-manual" rows="2" spellcheck="false" placeholder="besitzer@schule.at" aria-label="Manuelle Besitzer-E-Mails Verwaltungsgruppe"></textarea>
+                            <div id="swOwnerSummaryVerwaltung" class="sw-owner-summary" aria-live="polite"></div>
+                        </div>
+                        <div class="sw-field">
+                            <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                                <input type="checkbox" id="swCreateTeamVerwaltung"> Zusätzlich Team bereitstellen (optional)
+                            </label>
+                        </div>
+                        <div class="sw-toolbar" style="margin-top:0;">
+                            <button type="button" class="btn btn-success" id="swBtnCreateGrpVerwaltung"><i class="bi bi-plus-circle"></i>Gruppe anlegen &amp; verknüpfen</button>
+                        </div>
+                    </div>
+                    <div id="swGrpPanelMatchVerwaltung" class="tab-panel" role="tabpanel" aria-labelledby="swGrpTabBtnMatchVerwaltung">
+                        <div class="sw-field">
+                            <label for="swGroupSearchVerwaltung">Bestehende Gruppe suchen</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                                <input type="text" id="swGroupSearchVerwaltung" style="flex:1 1 220px;min-width:180px;" autocomplete="off" placeholder="Name, Alias oder SMTP">
+                                <button type="button" class="btn" id="swBtnSearchGrpVerwaltung"><i class="bi bi-search"></i>Suchen</button>
+                            </div>
+                        </div>
+                        <div id="swSearchResultsVerwaltung" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+                <div id="swMatchSummaryVerwaltung" style="margin-top:14px;padding:12px;border-radius:12px;background:var(--soft);border:1px solid var(--border);"></div>
+                <div class="sw-toolbar" style="margin-top:14px;">
+                    <button type="button" class="btn btn-success" id="swBtnSyncMembersVerwaltung"><i class="bi bi-person-plus-fill"></i>Mitglieder aus Verwaltungsliste synchronisieren</button>
+                </div>
+                <div class="sw-field">
+                    <label>Protokoll</label>
+                    <div id="swSyncLogVerwaltung" style="max-height:160px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:8px;font-family:Consolas,monospace;font-size:0.82em;"></div>
+                </div>
+            </div>
+
+            <div id="swStep4" class="sw-panel" style="display:none;">
+                <h2>4. Lehrer:innen und Sammelgruppe</h2>
+                <p class="intro">Lehrkräfte wie in den Schul‑Grundeinstellungen: pro Zeile <code>Kürzel;Name;E‑Mail</code>. Die Tabelle zeigt dieselben Daten – <strong>Doppelklick</strong> zum Bearbeiten. Über <strong>E‑Mails mit Microsoft prüfen</strong> können Sie feststellen, ob die Adresse bereits als <strong>Microsoft‑365‑/Entra‑Benutzer</strong> existiert (Zuordnung wird lokal gespeichert). Anschließend die Sammelgruppe: Standard <strong>neu anlegen</strong>, alternativ <strong>verknüpfen</strong>.</p>
+                <div class="sw-field">
+                    <label for="swTeachersLines">Lehrerliste (eine Zeile pro Lehrkraft)</label>
+                    <textarea id="swTeachersLines" spellcheck="false" placeholder="XY;Max Mustermann;max@schule.at"></textarea>
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
+                        Format: <code>Kürzel;Name;E‑Mail</code>. E‑Mail ist optional, aber empfohlen (für Kursteams‑Besitzer und Entra‑Abgleich). Import (CSV/XLSX), Vorlagen und Tabellenbearbeitung per Doppelklick – wie in den <a href="tenant.html">Schul‑Grundeinstellungen</a>.
+                    </small>
+                    <div class="settings-actions">
+                        <label class="btn" for="swTeachersImportFile" style="cursor:pointer;margin:0;"><i class="bi bi-upload"></i>Import (CSV/XLSX)</label>
+                        <input type="file" id="swTeachersImportFile" accept=".xlsx,.xls,.csv">
+                        <button type="button" class="btn" id="swBtnTeachersTplXlsx"><i class="bi bi-file-earmark-spreadsheet"></i>XLSX‑Vorlage</button>
+                        <button type="button" class="btn" id="swBtnTeachersTplCsv"><i class="bi bi-filetype-csv"></i>CSV‑Vorlage</button>
+                        <button type="button" class="btn" id="swBtnSchuldatenMasterTpl4" title="Eine Excel-Datei mit Blättern für Verwaltung, Lehrer, Schüler, Fächer, ARGE und Klassen"><i class="bi bi-files"></i>Excel alle Listen</button>
+                    </div>
+                    <div class="teachers-table-wrap" aria-label="Lehrerliste als Tabelle">
+                        <table class="teachers-table" aria-label="Lehrerliste (editierbar per Doppelklick)">
+                            <thead>
+                                <tr>
+                                    <th>Kürzel</th>
+                                    <th>Name</th>
+                                    <th>E‑Mail</th>
+                                    <th>Microsoft 365</th>
+                                    <th class="action-cell">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swTeachersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-success" id="swBtnTeachersAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                        <button type="button" class="btn btn-success" id="swBtnSaveTeachers"><i class="bi bi-floppy"></i>Lehrerliste speichern</button>
+                        <button type="button" class="btn" id="swBtnVerifyTeachersGraph" title="Für jede E‑Mail in Microsoft Entra suchen (mail oder UPN)"><i class="bi bi-microsoft"></i>E‑Mails mit Microsoft prüfen</button>
+                    </div>
+                    <div id="swStatsTeachers" class="sw-wiz-stats" aria-live="polite"></div>
+                </div>
+
+                <hr style="margin:22px 0;border:0;border-top:1px solid var(--border);">
+
+                <p class="intro" style="margin-bottom:10px;"><strong>Microsoft‑365‑Gruppe</strong> für Lehrer:innen: <strong>Standard ist eine neue Gruppe</strong>; per zweiter Registerkarte können Sie stattdessen eine <strong>bestehende</strong> Gruppe suchen und verknüpfen.</p>
+                <div class="sw-grp-tabs">
+                    <div class="tabs" role="tablist" aria-label="Lehrer-Sammelgruppe: Vorgehen">
+                        <button type="button" class="tab-btn" id="swGrpTabBtnNewLehrer" role="tab" aria-selected="true" aria-controls="swGrpPanelNewLehrer"><i class="bi bi-plus-circle" aria-hidden="true"></i>Neue Gruppe anlegen</button>
+                        <button type="button" class="tab-btn" id="swGrpTabBtnMatchLehrer" role="tab" aria-selected="false" aria-controls="swGrpPanelMatchLehrer"><i class="bi bi-link-45deg" aria-hidden="true"></i>Bestehende Gruppe verknüpfen</button>
+                    </div>
+                    <div id="swGrpPanelNewLehrer" class="tab-panel active" role="tabpanel" aria-labelledby="swGrpTabBtnNewLehrer">
+                        <div class="sw-field">
+                            <label for="swNewDnLehrer">Anzeigename</label>
+                            <input type="text" id="swNewDnLehrer" maxlength="200" autocomplete="off">
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewNickLehrer">Alias / Mail‑Nickname</label>
+                            <input type="text" id="swNewNickLehrer" maxlength="60" autocomplete="off" spellcheck="false">
+                            <small id="swSmtpPreviewLehrer" class="sw-smtp-preview-hint" aria-live="polite"></small>
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewDescLehrer">Beschreibung</label>
+                            <input type="text" id="swNewDescLehrer" maxlength="512" autocomplete="off">
+                        </div>
+                        <div class="sw-field sw-owner-block">
+                            <span class="sw-owner-block__title">Gruppenbesitzer (Microsoft 365)</span>
+                            <small class="sw-owner-block__hint">Besitzer können die Gruppe verwalten (Mitglieder, Einstellungen). Standard ist die <strong>Direktion</strong> aus der Verwaltungstabelle (Schritt 3).</small>
+                            <div class="sw-owner-radios">
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerLehrer" value="direktion" checked> Direktion (Verwaltung, Rolle „Direktion“)</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerLehrer" value="teachers"> Alle Lehrkräfte mit E‑Mail aus der Lehrerliste</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerLehrer" value="manual"> Manuell (E‑Mails, Komma oder Zeilenumbruch)</label>
+                            </div>
+                            <textarea id="swOwnerManualLehrer" class="sw-owner-manual" rows="2" spellcheck="false" placeholder="besitzer@schule.at" aria-label="Manuelle Besitzer-E-Mails Lehrergruppe"></textarea>
+                            <div id="swOwnerSummaryLehrer" class="sw-owner-summary" aria-live="polite"></div>
+                        </div>
+                        <div class="sw-field">
+                            <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                                <input type="checkbox" id="swCreateTeamLehrer"> Zusätzlich Team bereitstellen (optional)
+                            </label>
+                        </div>
+                        <div class="sw-toolbar" style="margin-top:0;">
+                            <button type="button" class="btn btn-success" id="swBtnCreateGrpLehrer"><i class="bi bi-plus-circle"></i>Gruppe anlegen &amp; verknüpfen</button>
+                        </div>
+                    </div>
+                    <div id="swGrpPanelMatchLehrer" class="tab-panel" role="tabpanel" aria-labelledby="swGrpTabBtnMatchLehrer">
+                        <div class="sw-field">
+                            <label for="swGroupSearchLehrer">Bestehende Gruppe suchen</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                                <input type="text" id="swGroupSearchLehrer" style="flex:1 1 220px;min-width:180px;" autocomplete="off" placeholder="Name, Alias oder SMTP">
+                                <button type="button" class="btn" id="swBtnSearchGrpLehrer"><i class="bi bi-search"></i>Suchen</button>
+                            </div>
+                        </div>
+                        <div id="swSearchResultsLehrer" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+                <div id="swMatchSummaryLehrer" style="margin-top:14px;padding:12px;border-radius:12px;background:var(--soft);border:1px solid var(--border);"></div>
+                <div class="sw-toolbar" style="margin-top:14px;">
+                    <button type="button" class="btn btn-success" id="swBtnSyncMembersLehrer"><i class="bi bi-person-plus-fill"></i>Mitglieder aus Lehrerliste synchronisieren</button>
+                </div>
+                <div class="sw-field">
+                    <label>Protokoll</label>
+                    <div id="swSyncLogLehrer" style="max-height:160px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:8px;font-family:Consolas,monospace;font-size:0.82em;"></div>
+                </div>
+            </div>
+
+            <div id="swStep5" class="sw-panel" style="display:none;">
+                <h2>5. Schüler:innen und Sammelgruppe</h2>
+                <p class="intro">Schüler:innen wie in den Schul‑Grundeinstellungen: pro Zeile <code>Klasse;Name;E‑Mail</code>. Die Tabelle zeigt dieselben Daten – <strong>Doppelklick</strong> zum Bearbeiten. <strong>Import</strong> aus CSV/XLSX (erstes Blatt = Schüler) wie bei den Lehrkräften. Optional: <strong>Gesamt‑Excel</strong> mit allen Listen auf einmal übernehmen (siehe Vorlage). Über <strong>E‑Mails mit Microsoft prüfen</strong> können Sie prüfen, ob die Adresse bereits als <strong>Microsoft‑365‑/Entra‑Benutzer</strong> existiert (lokal gespeichert). Anschließend die Sammelgruppe: Standard <strong>neu anlegen</strong>, alternativ <strong>verknüpfen</strong>.</p>
+                <div class="sw-field">
+                    <label for="swStudentsLines">Schülerliste (eine Zeile pro Schüler)</label>
+                    <textarea id="swStudentsLines" spellcheck="false" placeholder="1A;Lisa Beispiel;lisa@schule.at"></textarea>
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
+                        Format: <code>Klasse;Name;E‑Mail</code> (wie in den <a href="tenant.html">Schul‑Grundeinstellungen</a>). Tabelle: Doppelklick zum Bearbeiten; E‑Mail für Entra‑Abgleich.
+                    </small>
+                    <div class="settings-actions" style="margin-top:10px;">
+                        <label class="btn" for="swStudentsImportFile" style="cursor:pointer;margin:0;"><i class="bi bi-upload"></i>Import Schüler (CSV/XLSX)</label>
+                        <input type="file" id="swStudentsImportFile" accept=".xlsx,.xls,.csv">
+                        <button type="button" class="btn" id="swBtnStudentsTplXlsx"><i class="bi bi-file-earmark-spreadsheet"></i>XLSX‑Vorlage Schüler</button>
+                        <button type="button" class="btn" id="swBtnStudentsTplCsv"><i class="bi bi-filetype-csv"></i>CSV‑Vorlage Schüler</button>
+                        <button type="button" class="btn" id="swBtnSchuldatenMasterTpl5" title="Eine Excel-Datei mit Blättern für Verwaltung, Lehrer, Schüler, Fächer, ARGE und Klassen"><i class="bi bi-files"></i>Excel alle Listen</button>
+                    </div>
+                    <div class="settings-actions" style="margin-top:8px;">
+                        <label class="btn" for="swSchuldatenMasterImportFile" style="cursor:pointer;margin:0;"><i class="bi bi-upload"></i>Import Gesamt‑Excel</label>
+                        <input type="file" id="swSchuldatenMasterImportFile" accept=".xlsx,.xls">
+                        <small style="color:var(--muted);display:block;width:100%;margin-top:6px;line-height:1.45;">Nur <strong>.xlsx</strong>: erkannte Blätter (Verwaltung, Lehrer, Schueler, Faecher, ARGE, Klassen) werden <strong>sofort in die Schul‑Einstellungen geschrieben</strong> und in den Schritten 3–8 angezeigt (Gruppen/Sammelgruppen wie bisher dort speichern).</small>
+                    </div>
+                    <div class="teachers-table-wrap" aria-label="Schülerliste als Tabelle">
+                        <table class="teachers-table" aria-label="Schülerliste (editierbar per Doppelklick)">
+                            <thead>
+                                <tr>
+                                    <th>Klasse</th>
+                                    <th>Name</th>
+                                    <th>E‑Mail</th>
+                                    <th>Microsoft 365</th>
+                                    <th class="action-cell">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swStudentsTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-success" id="swBtnStudentsAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                        <button type="button" class="btn btn-success" id="swBtnSaveStudents"><i class="bi bi-floppy"></i>Schülerliste speichern</button>
+                        <button type="button" class="btn" id="swBtnVerifyStudentsGraph" title="Für jede E‑Mail in Microsoft Entra suchen (mail oder UPN)"><i class="bi bi-microsoft"></i>E‑Mails mit Microsoft prüfen</button>
+                    </div>
+                    <div id="swStatsStudents" class="sw-wiz-stats" aria-live="polite"></div>
+                </div>
+
+                <hr style="margin:22px 0;border:0;border-top:1px solid var(--border);">
+
+                <p class="intro" style="margin-bottom:10px;"><strong>Microsoft‑365‑Gruppe</strong> für Schüler:innen: <strong>Standard ist eine neue Gruppe</strong>; alternativ eine <strong>bestehende</strong> Gruppe verknüpfen (zweite Registerkarte).</p>
+                <div class="sw-grp-tabs">
+                    <div class="tabs" role="tablist" aria-label="Schüler-Sammelgruppe: Vorgehen">
+                        <button type="button" class="tab-btn" id="swGrpTabBtnNewSchueler" role="tab" aria-selected="true" aria-controls="swGrpPanelNewSchueler"><i class="bi bi-plus-circle" aria-hidden="true"></i>Neue Gruppe anlegen</button>
+                        <button type="button" class="tab-btn" id="swGrpTabBtnMatchSchueler" role="tab" aria-selected="false" aria-controls="swGrpPanelMatchSchueler"><i class="bi bi-link-45deg" aria-hidden="true"></i>Bestehende Gruppe verknüpfen</button>
+                    </div>
+                    <div id="swGrpPanelNewSchueler" class="tab-panel active" role="tabpanel" aria-labelledby="swGrpTabBtnNewSchueler">
+                        <div class="sw-field">
+                            <label for="swNewDnSchueler">Anzeigename</label>
+                            <input type="text" id="swNewDnSchueler" maxlength="200" autocomplete="off">
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewNickSchueler">Alias / Mail‑Nickname</label>
+                            <input type="text" id="swNewNickSchueler" maxlength="60" autocomplete="off" spellcheck="false">
+                            <small id="swSmtpPreviewSchueler" class="sw-smtp-preview-hint" aria-live="polite"></small>
+                        </div>
+                        <div class="sw-field">
+                            <label for="swNewDescSchueler">Beschreibung</label>
+                            <input type="text" id="swNewDescSchueler" maxlength="512" autocomplete="off">
+                        </div>
+                        <div class="sw-field sw-owner-block">
+                            <span class="sw-owner-block__title">Gruppenbesitzer (Microsoft 365)</span>
+                            <small class="sw-owner-block__hint">Schüler:innen‑Gruppen sollten typischerweise von Erwachsenen besitzt werden (z. B. Direktion oder Verwaltung).</small>
+                            <div class="sw-owner-radios">
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerSchueler" value="direktion" checked> Direktion (Verwaltung, Rolle „Direktion“)</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerSchueler" value="admin"> Alle Verwaltungs‑E‑Mails (Schritt 3)</label>
+                                <label class="sw-owner-line"><input type="radio" name="swOwnerSchueler" value="manual"> Manuell (E‑Mails, Komma oder Zeilenumbruch)</label>
+                            </div>
+                            <textarea id="swOwnerManualSchueler" class="sw-owner-manual" rows="2" spellcheck="false" placeholder="besitzer@schule.at" aria-label="Manuelle Besitzer-E-Mails Schülergruppe"></textarea>
+                            <div id="swOwnerSummarySchueler" class="sw-owner-summary" aria-live="polite"></div>
+                        </div>
+                        <div class="sw-field">
+                            <label style="display:flex;align-items:center;gap:8px;font-weight:500;">
+                                <input type="checkbox" id="swCreateTeamSchueler"> Zusätzlich Team bereitstellen (optional)
+                            </label>
+                        </div>
+                        <div class="sw-toolbar" style="margin-top:0;">
+                            <button type="button" class="btn btn-success" id="swBtnCreateGrpSchueler"><i class="bi bi-plus-circle"></i>Gruppe anlegen &amp; verknüpfen</button>
+                        </div>
+                    </div>
+                    <div id="swGrpPanelMatchSchueler" class="tab-panel" role="tabpanel" aria-labelledby="swGrpTabBtnMatchSchueler">
+                        <div class="sw-field">
+                            <label for="swGroupSearchSchueler">Bestehende Gruppe suchen</label>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                                <input type="text" id="swGroupSearchSchueler" style="flex:1 1 220px;min-width:180px;" autocomplete="off" placeholder="Name, Alias oder SMTP">
+                                <button type="button" class="btn" id="swBtnSearchGrpSchueler"><i class="bi bi-search"></i>Suchen</button>
+                            </div>
+                        </div>
+                        <div id="swSearchResultsSchueler" style="margin-top:12px;"></div>
+                    </div>
+                </div>
+                <div id="swMatchSummarySchueler" style="margin-top:14px;padding:12px;border-radius:12px;background:var(--soft);border:1px solid var(--border);"></div>
+                <div class="sw-toolbar" style="margin-top:14px;">
+                    <button type="button" class="btn btn-success" id="swBtnSyncMembersSchueler"><i class="bi bi-person-plus-fill"></i>Mitglieder aus Schülerliste synchronisieren</button>
+                </div>
+                <div class="sw-field">
+                    <label>Protokoll</label>
+                    <div id="swSyncLogSchueler" style="max-height:160px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:8px;font-family:Consolas,monospace;font-size:0.82em;"></div>
+                </div>
+            </div>
+
+            <div id="swStep6" class="sw-panel" style="display:none;">
+                <h2>6. Fächer (Fachgruppen)</h2>
+                <p class="intro">Fächer wie in den Grundeinstellungen: eine Zeile <code>Kürzel;Bezeichnung</code> im Textfeld oder direkt in der Tabelle. <strong>Eine Tabelle</strong> für alles: Kürzel/Name bearbeiten (<strong>Doppelklick</strong>), SMTP‑Vorschau, Microsoft‑365‑Verknüpfung (Object‑ID) sowie <strong>Suchen</strong> / <strong>Anlegen</strong> pro Zeile. Optional <strong>Auto‑Match</strong> oder Schritt überspringen.</p>
+                <div class="sw-field">
+                    <label for="swSubjectGroupPrefix">Präfix für Mail‑Nickname neuer Fachgruppen</label>
+                    <input type="text" id="swSubjectGroupPrefix" maxlength="24" autocomplete="off" spellcheck="false" placeholder="fach" title="Kleinbuchstaben nach Speichern. Erlaubt u. a. a–z, 0–9, Punkt, Bindestrich, Unterstrich. Entfernt u. a. @ ( ) \ [ ] &quot; ; : &lt; &gt; , und Leerzeichen (Microsoft mailNickname).">
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">Die Schul‑Domain kommt aus <strong>Schritt 2</strong>. Vorschau: <code>Alias@Domain</code>. Präfix: z. B. <code>fach-</code> oder <code>subj_</code> – ungültige Zeichen für Microsoft‑365‑Gruppen‑Aliase werden automatisch entfernt.</small>
+                </div>
+                <div class="sw-field">
+                    <label for="swSubjectsBulk">Fächer (Rohliste)</label>
+                    <textarea id="swSubjectsBulk" spellcheck="false" placeholder="D;Deutsch&#10;M;Mathematik"></textarea>
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">Textfeld und Tabelle sind gekoppelt. <strong>Speichern</strong> übernimmt die Fächerliste in die Schul‑Einstellungen.</small>
+                    <div class="teachers-table-wrap" aria-label="Fächer und Microsoft-365-Abgleich" style="margin-top:12px;">
+                        <table class="teachers-table" aria-label="Fächer: Liste und M365-Abgleich" style="min-width:720px;">
+                            <thead>
+                                <tr>
+                                    <th>Kürzel</th>
+                                    <th>Bezeichnung</th>
+                                    <th>Vorschau SMTP</th>
+                                    <th>M365 (Object-ID)</th>
+                                    <th class="action-cell">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swSubjectsUnifiedBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-success" id="swBtnSubjectsAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                    </div>
+                </div>
+                <div class="sw-toolbar" style="flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" id="swBtnSaveSubjectsBulk"><i class="bi bi-floppy"></i>Speichern &amp; Tabelle aktualisieren</button>
+                    <button type="button" class="btn" id="swBtnSubjectsAutoMatch" title="Für Fächer ohne M365‑Verknüpfung wird in Microsoft 365 gesucht; bei eindeutig gutem Treffer wird verknüpft (ohne Rückfrage)."><i class="bi bi-magic"></i>Passende Gruppen automatisch suchen</button>
+                    <button type="button" class="btn" id="swBtnSubjectsBulkCreateM365" title="Legt für alle Einträge ohne M365‑Verknüpfung jeweils eine neue Microsoft‑365‑Gruppe an (Anzeigename und Alias wie „Anlegen“ pro Zeile, ohne Rückfrage). Bei Fehler wird mit der nächsten Zeile fortgefahren."><i class="bi bi-folder-plus"></i>Fehlende M365‑Gruppen anlegen</button>
+                    <button type="button" class="btn" id="swBtnSkipSubjects" title="Keine Fächer jetzt – weiter zu ARGE"><i class="bi bi-skip-forward"></i>Überspringen</button>
+                </div>
+            </div>
+
+            <div id="swStep7" class="sw-panel" style="display:none;">
+                <h2>7. Arbeitsgruppen (ARGE)</h2>
+                <p class="intro">ARGEs wie in den Grundeinstellungen: eine Zeile <code>Kürzel;Bezeichnung</code> im Textfeld oder direkt in der Tabelle. <strong>Eine Tabelle</strong> für alles: Kürzel/Bezeichnung bearbeiten (<strong>Doppelklick</strong>), SMTP‑Vorschau, Microsoft‑365‑Verknüpfung (Object‑ID) sowie <strong>Suchen</strong> / <strong>Anlegen</strong> pro Zeile. Optional <strong>Auto‑Match</strong> oder Schritt überspringen.</p>
+                <div class="sw-field">
+                    <label for="swArgeGroupPrefix">Präfix für Mail‑Nickname neuer ARGE‑Gruppen</label>
+                    <input type="text" id="swArgeGroupPrefix" maxlength="24" autocomplete="off" spellcheck="false" placeholder="ag" title="Wie Fach‑Präfix: a–z, 0–9, . - _ u. a.; keine @ ( ) &quot; ; : &lt; &gt; , Leerzeichen (Microsoft mailNickname).">
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">Die Schul‑Domain kommt aus <strong>Schritt 2</strong>. Vorschau: <code>Alias@Domain</code>. Präfix: z. B. <code>ag-</code> oder <code>arge_</code> – ungültige Zeichen für Microsoft‑365‑Gruppen‑Aliase werden automatisch entfernt.</small>
+                </div>
+                <div class="sw-field">
+                    <label for="swArgesBulk">Arbeitsgruppen / ARGEs (Rohliste)</label>
+                    <textarea id="swArgesBulk" spellcheck="false" placeholder="ARGE;ARGE Beispiel"></textarea>
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">Textfeld und Tabelle sind gekoppelt. <strong>Speichern</strong> übernimmt die ARGE‑Liste in die Schul‑Einstellungen.</small>
+                    <div class="teachers-table-wrap" aria-label="ARGE und Microsoft-365-Abgleich" style="margin-top:12px;">
+                        <table class="teachers-table" aria-label="ARGE: Liste und M365-Abgleich" style="min-width:720px;">
+                            <thead>
+                                <tr>
+                                    <th>Kürzel</th>
+                                    <th>Bezeichnung</th>
+                                    <th>Vorschau SMTP</th>
+                                    <th>M365 (Object-ID)</th>
+                                    <th class="action-cell">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swArgesUnifiedBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-success" id="swBtnArgesAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                    </div>
+                </div>
+                <div class="sw-toolbar" style="flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" id="swBtnSaveArgesBulk"><i class="bi bi-floppy"></i>Speichern &amp; Tabelle aktualisieren</button>
+                    <button type="button" class="btn" id="swBtnArgesAutoMatch" title="Für ARGEs ohne M365‑Verknüpfung wird in Microsoft 365 gesucht; bei eindeutig gutem Treffer wird verknüpft (ohne Rückfrage)."><i class="bi bi-magic"></i>Passende Gruppen automatisch suchen</button>
+                    <button type="button" class="btn" id="swBtnArgesBulkCreateM365" title="Legt für alle Einträge ohne M365‑Verknüpfung jeweils eine neue Microsoft‑365‑Gruppe an (Anzeigename und Alias wie „Anlegen“ pro Zeile, ohne Rückfrage). Bei Fehler wird mit der nächsten Zeile fortgefahren."><i class="bi bi-folder-plus"></i>Fehlende M365‑Gruppen anlegen</button>
+                    <button type="button" class="btn" id="swBtnSkipArges" title="Keine ARGEs jetzt – weiter zu Klassen"><i class="bi bi-skip-forward"></i>Überspringen</button>
+                </div>
+            </div>
+
+            <div id="swStep8" class="sw-panel" style="display:none;">
+                <h2>8. Klassen (stabile Microsoft‑365‑Gruppen)</h2>
+                <p class="intro">Pro Klasse/Kohorte legen Sie <strong>einmal</strong> eine Gruppe mit <strong>festem Mail‑Alias</strong> an (Schema <code>jg{Abschlussjahr}{Kürzel}</code>, z. B. <code>jg2031hma</code>). Der <strong>Anzeigename</strong> kann später pro Schuljahr geändert werden (z. B. <code>1HMA</code> → <code>2HMA</code>) – technische ID bleibt. Wie bei <strong>ARGE</strong>: eine Zeile <code>Kürzel;Abschlussjahr;Bezeichnung</code> im Textfeld oder direkt in der Tabelle – <strong>Doppelklick</strong> zum Bearbeiten, <strong>Vorschau SMTP</strong>, Microsoft‑365‑Verknüpfung (Object‑ID) sowie <strong>Suchen</strong> / <strong>Anlegen</strong> pro Zeile. Optional Klassenvorstand: <code>…;Name;E‑Mail</code> wie in den <a href="tenant.html">Grundeinstellungen</a>.</p>
+                <p class="intro" style="font-size:0.95em;">Nach dem Schuljahreswechsel: Klassen‑Anzeigenamen unter <a href="tenant.html#classes">Schul‑Einstellungen → Tab „Klassen“</a> anpassen (inkl. Microsoft 365).</p>
+                <div class="sw-field">
+                    <label for="swClassesBulk">Klassen (Rohliste)</label>
+                    <textarea id="swClassesBulk" spellcheck="false" placeholder="HMA;2031;1HMA"></textarea>
+                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">Textfeld und Tabelle sind gekoppelt. <strong>Speichern</strong> übernimmt die Klassenliste in die Schul‑Einstellungen. Der stabile Alias ergibt sich aus Abschlussjahr und Kürzel (Vorschau‑Spalte).</small>
+                    <div class="teachers-table-wrap" aria-label="Klassen und Microsoft-365-Abgleich" style="margin-top:12px;">
+                        <table class="teachers-table" aria-label="Klassen: Liste und M365-Abgleich" style="min-width:780px;">
+                            <thead>
+                                <tr>
+                                    <th>Kürzel</th>
+                                    <th>Jahr</th>
+                                    <th>Bezeichnung</th>
+                                    <th>Vorschau SMTP</th>
+                                    <th>M365 (Object-ID)</th>
+                                    <th class="action-cell">Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swClassesBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="settings-actions">
+                        <button type="button" class="btn btn-success" id="swBtnClassesAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                    </div>
+                </div>
+                <div class="sw-toolbar" style="flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" id="swBtnSaveClassesBulk"><i class="bi bi-floppy"></i>Speichern &amp; Tabelle aktualisieren</button>
+                    <button type="button" class="btn btn-success" id="swBtnStep8Next"><i class="bi bi-arrow-right-circle"></i>Weiter zur Übersicht</button>
+                </div>
+            </div>
+
+            <div id="swStep9" class="sw-panel" style="display:none;">
+                <h2>9. Kurzüberblick &amp; nächste Schritte</h2>
+                <p class="intro">Die geführte Einrichtung ist damit inhaltlich abgeschlossen, sobald Sie die Stammdaten gepflegt haben. Unten sehen Sie eine <strong>Zusammenfassung</strong> aus den gespeicherten Schul‑Einstellungen; danach können Sie direkt in passende Werkzeuge wechseln – z. B. <strong>Kursteams</strong>, weitere <strong>Gruppen/Teams</strong>, <strong>Personen</strong> oder die <strong>Schul‑Grundeinstellungen</strong> für Feinkorrekturen.</p>
+                <div id="swStep9SummaryBody" class="sw-wiz-stats" aria-live="polite"></div>
+                <h3 style="margin:22px 0 8px;font-size:1.05em;color:#32325d;">Empfohlene Werkzeuge</h3>
+                <div class="sw-next-grid" aria-label="Weiterführende Werkzeuge">
+                    <a class="sw-next-card" href="index.html">
+                        <span class="sw-next-card__title"><i class="bi bi-house-door" aria-hidden="true"></i>Dashboard</span>
+                        <p class="sw-next-card__desc">Zurück zur Übersicht aller Werkzeuge und Schnellzugriffe.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tenant.html">
+                        <span class="sw-next-card__title"><i class="bi bi-sliders2-vertical" aria-hidden="true"></i>Schul‑Grundeinstellungen</span>
+                        <p class="sw-next-card__desc">Domain, Listen, Schuljahr und Importe zentral bearbeiten.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/kursteams.html">
+                        <span class="sw-next-card__title"><i class="bi bi-easel2" aria-hidden="true"></i>Kursteams</span>
+                        <p class="sw-next-card__desc">Aus Fächern und Klassen Microsoft‑Teams für den Unterricht anlegen und pflegen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/schueler-lehrer-gruppen.html">
+                        <span class="sw-next-card__title"><i class="bi bi-people" aria-hidden="true"></i>Lehrerinnen &amp; Schülerinnen</span>
+                        <p class="sw-next-card__desc">Sammelgruppen und Mitglieder im Detail, inkl. Graph‑Aktionen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/gruppenerstellung.html">
+                        <span class="sw-next-card__title"><i class="bi bi-folder-plus" aria-hidden="true"></i>Gruppenerstellung</span>
+                        <p class="sw-next-card__desc">Weitere Microsoft‑365‑Gruppen nach Regeln und Vorlagen anlegen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/weitere-teams-gruppen.html">
+                        <span class="sw-next-card__title"><i class="bi bi-diagram-3" aria-hidden="true"></i>Weitere Teams &amp; Gruppen</span>
+                        <p class="sw-next-card__desc">Assistent für zusätzliche Teams und Gruppenstrukturen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/personen-verwaltung.html">
+                        <span class="sw-next-card__title"><i class="bi bi-person-lines-fill" aria-hidden="true"></i>Personen‑Verwaltung</span>
+                        <p class="sw-next-card__desc">Benutzer:innen und Zuordnungen im Microsoft‑Kontext unterstützen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/verteilerlisten.html">
+                        <span class="sw-next-card__title"><i class="bi bi-envelope-at" aria-hidden="true"></i>Verteilerlisten</span>
+                        <p class="sw-next-card__desc">Listen und Mail‑aktivierte Gruppen für Verteiler nutzen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/jahrgang.html">
+                        <span class="sw-next-card__title"><i class="bi bi-layers" aria-hidden="true"></i>Jahrgang</span>
+                        <p class="sw-next-card__desc">Jahrgangs‑ und Klassenlisten für Gruppenarbeit vorbereiten.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/archiv/arge.html">
+                        <span class="sw-next-card__title"><i class="bi bi-archive" aria-hidden="true"></i>ARGE‑Assistent (Archiv)</span>
+                        <p class="sw-next-card__desc">Legacy‑Mehrschritt‑Werkzeug; Standard ist Schritt 7 bzw. Schul‑Einstellungen.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tenant.html#classes">
+                        <span class="sw-next-card__title"><i class="bi bi-pencil-square" aria-hidden="true"></i>Klassen‑Anzeigenamen</span>
+                        <p class="sw-next-card__desc">Schul‑Einstellungen, Tab „Klassen“: M365‑Anzeigenamen nach Schuljahreswechsel.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                    <a class="sw-next-card" href="tools/schulstruktur-sync.html">
+                        <span class="sw-next-card__title"><i class="bi bi-arrow-left-right" aria-hidden="true"></i>Schulstruktur‑Sync</span>
+                        <p class="sw-next-card__desc">Struktur und Gruppen im Mandanten abstimmen und synchronisieren.</p>
+                        <span class="sw-next-card__go">Öffnen →</span>
+                    </a>
+                </div>
+                <div class="sw-toolbar" style="margin-top:22px;flex-wrap:wrap;">
+                    <button type="button" class="btn btn-success" id="swBtnFinish"><i class="bi bi-check2-circle"></i>Einrichtung abschließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <p class="site-credit-row"><a href="https://www.kurtrocks.com/" class="site-credit-link" target="_blank" rel="noopener noreferrer"><i class="bi bi-info-circle" aria-hidden="true"></i>kurtrocks.com</a></p>
+
+    <script src="ms365-config.js"></script>
+    <script type="module" src="src/shared/msal-auth-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+    <script src="src/shared/app-data-v2.js" defer></script>
+    <script src="src/shared/school-domain.js" defer></script>
+    <script src="src/shared/app-dialog.js" defer></script>
+    <script src="src/shared/tenant-settings-core.js" defer></script>
+    <script src="src/shared/tenant-settings-ui.js" defer></script>
+    <script src="src/shared/graph-unified-groups.js" defer></script>
+    <script src="src/shared/setup-wizard.js" type="module"></script>
+</body>
+</html>

@@ -29,6 +29,10 @@
             el.classList.add('show');
             clearTimeout(toast._t);
             toast._t = setTimeout(() => el.classList.remove('show'), 3800);
+        } else if (typeof window.ms365ToastOrAlert === 'function') {
+            window.ms365ToastOrAlert(msg);
+        } else if (typeof window.ms365ShowToast === 'function') {
+            window.ms365ShowToast(msg);
         } else {
             window.alert(msg);
         }

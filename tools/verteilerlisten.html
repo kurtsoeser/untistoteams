@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Verteilerlisten &amp; Sicherheitsgruppen</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            padding-bottom: 28px;
+        }
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px; }
+        .muted { color: var(--muted); }
+
+        .tree-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .tree-filter label { display: block; font-weight: 700; color: #495057; margin-bottom: 6px; font-size: 0.92em; }
+        .tree-filter input, .tree-filter select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+        }
+
+        .tree {
+            margin: 12px 0 0;
+            padding: 0;
+            list-style: none;
+            max-height: 64vh;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .tree li { border-bottom: 1px solid #f0f1f3; }
+        .tree li:last-child { border-bottom: 0; }
+        .tree button {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .tree button:hover { background: rgba(94,114,228,0.06); }
+        .tree button[aria-current="true"] { background: rgba(94,114,228,0.10); }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e9ecef;
+            background: #fafbff;
+            color: #495057;
+            font-weight: 800;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+        .pill.dl  { border-color: rgba(94,114,228,0.28); background: rgba(94,114,228,0.10); color: #32325d; }
+        .pill.sec { border-color: rgba(220,53,69,0.28);   background: rgba(220,53,69,0.08);   color: #842029; }
+        .pill.hidden { border-color: rgba(133,100,4,0.22); background: rgba(255,193,7,0.12); color: #856404; }
+
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        .field label { display: block; font-weight: 700; margin: 0 0 6px; color: #495057; }
+        .field input, .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+            min-height: 160px;
+            resize: vertical;
+            font-family: Consolas, 'Segoe UI', monospace;
+            font-size: 0.9em;
+            line-height: 1.35;
+        }
+        .field input[readonly] { background: #f8f9fa; color: #32325d; }
+        .field-full { grid-column: 1 / -1; }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
+        .checkbox-row input { width: auto; }
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .detail-actions .btn { margin: 0; }
+
+        .members-list {
+            margin-top: 8px;
+            max-height: 200px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 6px 10px;
+            background: #fff;
+        }
+        .members-list ul { margin: 0; padding-left: 18px; font-size: 0.9em; line-height: 1.5; }
+        .members-list .muted { font-size: 0.88em; }
+    </style>
+</head>
+<body data-ms365-skip-tenant-domain-prompt="true">
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-envelope-paper"></i>Verteilerlisten &amp; Sicherheitsgruppen</span>
+            </div>
+            <p>Verteilerlisten und mail‑aktivierte Sicherheitsgruppen auslesen und per generiertem Exchange‑Online‑PowerShell‑Skript anlegen/ändern/löschen (Graph ist hier read‑only).</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                        <button type="button" class="btn btn-success" id="vlBtnLoadExo"><i class="bi bi-box-seam"></i>Exchange‑Export (JSON)</button>
+                        <label class="btn" for="vlImportJson" style="cursor:pointer;"><i class="bi bi-upload"></i>Import (JSON)</label>
+                        <input type="file" id="vlImportJson" accept="application/json,.json" style="display:none;">
+                        <button type="button" class="btn" id="vlBtnLoadGraph"><i class="bi bi-cloud-download"></i>Graph einlesen</button>
+                        <button type="button" class="btn btn-success" id="vlBtnNew"><i class="bi bi-plus-circle"></i>Neu anlegen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="hint" style="margin-bottom:14px;">
+                <strong>Wichtig:</strong> Microsoft Graph kann Verteilerlisten und mail‑aktivierte Sicherheitsgruppen
+                <em>lesen</em>, aber nicht <em>schreiben</em>. Anlegen, Ändern und Löschen erfolgt deshalb
+                über generierte <strong>Exchange‑Online‑PowerShell‑Skripte</strong> (Cmdlets
+                <code>New-/Set-/Remove-DistributionGroup</code>, <code>Add-/Remove-DistributionGroupMember</code>),
+                die du selbst ausführst.
+            </div>
+
+            <div class="layout">
+                <section class="panel" aria-label="Verteilerlisten und Sicherheitsgruppen">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-envelope-paper" style="margin-right:10px;"></i>Verteilerlisten &amp; mail‑akt. Sicherheitsgruppen</h2>
+                        <div class="tree-filter" aria-label="Filter">
+                            <div>
+                                <label for="vlTypeFilter">Typ</label>
+                                <select id="vlTypeFilter">
+                                    <option value="all" selected>Alle (DL + Sec)</option>
+                                    <option value="dl">Nur Verteilerlisten</option>
+                                    <option value="sec">Nur Sicherheitsgruppen (mail‑akt.)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="vlSearch">Suche</label>
+                                <input type="text" id="vlSearch" placeholder="Name, E‑Mail, Alias …" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="vlProgress" class="hint" style="display:none; margin-bottom:12px;"></div>
+                        <div id="vlExoExportWrap" class="hint" style="display:none; margin-bottom:12px;">
+                            <div style="font-weight:900;color:#32325d;margin-bottom:8px;"><i class="bi bi-terminal"></i>Exchange Online Export (DL + mail‑akt. Sec → JSON)</div>
+                            <div class="muted" style="margin-bottom:10px; line-height:1.45;">
+                                1) Script kopieren oder als <code>.ps1</code> speichern und in PowerShell ausführen.<br>
+                                2) Es wird eine Datei <code>distribution-groups-export.json</code> erzeugt (inkl. Mitglieder &amp; Besitzer).<br>
+                                3) Diese Datei hier mit <strong>Import (JSON)</strong> laden.
+                            </div>
+                            <div class="field" style="margin:0;">
+                                <label for="vlExoExportScript">Script</label>
+                                <textarea id="vlExoExportScript" readonly></textarea>
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="vlExoCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                <button type="button" class="btn" id="vlExoDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                                <button type="button" class="btn" id="vlExoHide"><i class="bi bi-x-circle"></i>Schließen</button>
+                            </div>
+                        </div>
+                        <ul class="tree" id="vlTree" aria-label="Liste"></ul>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="Details und Aktionen">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-pencil-square" style="margin-right:10px;"></i>Details &amp; Aktionen</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hint" id="vlHint">
+                            Links eine Gruppe auswählen, oben rechts <strong>Graph einlesen</strong> oder
+                            <strong>Neu anlegen</strong> drücken.
+                        </div>
+
+                        <div id="vlDetail" style="display:none;">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="vlName">Anzeigename</label>
+                                    <input type="text" id="vlName" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="vlMail">Primäre SMTP</label>
+                                    <input type="text" id="vlMail" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="vlAlias">Alias</label>
+                                    <input type="text" id="vlAlias" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="vlType">Typ</label>
+                                    <input type="text" id="vlType" readonly>
+                                </div>
+                                <div class="field field-full">
+                                    <label for="vlId">Objekt‑ID</label>
+                                    <input type="text" id="vlId" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                                </div>
+                            </div>
+
+                            <div class="members-list" id="vlMembersBox" style="margin-top:14px;">
+                                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+                                    <strong style="color:#32325d;">Mitglieder &amp; Besitzer</strong>
+                                    <button type="button" class="btn btn-small" id="vlBtnLoadMembers"><i class="bi bi-cloud-download"></i>Aus Graph nachladen</button>
+                                    <span class="muted" id="vlMembersCount"></span>
+                                </div>
+                                <div id="vlMembersOut" class="muted">Noch nicht geladen.</div>
+                            </div>
+
+                            <div class="detail-actions">
+                                <button type="button" class="btn" id="vlCopyMail"><i class="bi bi-clipboard"></i>SMTP kopieren</button>
+                            </div>
+                        </div>
+
+                        <hr style="margin:18px 0; border:0; border-top:1px solid var(--border);">
+
+                        <div>
+                            <h3 style="margin:0 0 8px;color:#32325d;font-size:1em;font-weight:900;"><i class="bi bi-terminal"></i>&nbsp;Aktion / PowerShell‑Skript erzeugen</h3>
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="vlActMode">Aktion</label>
+                                    <select id="vlActMode">
+                                        <option value="report" selected>Anzeigen (Report)</option>
+                                        <option value="new">Neu anlegen</option>
+                                        <option value="set">Eigenschaften ändern</option>
+                                        <option value="members">Mitglieder hinzufügen / entfernen</option>
+                                        <option value="owners">Besitzer (ManagedBy) setzen</option>
+                                        <option value="delete">Löschen</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="vlActType">Gruppentyp</label>
+                                    <select id="vlActType">
+                                        <option value="Distribution" selected>Verteilerliste</option>
+                                        <option value="Security">Mail‑akt. Sicherheitsgruppe</option>
+                                    </select>
+                                </div>
+
+                                <div class="field" data-act-show="new">
+                                    <label for="vlNewName">Anzeigename *</label>
+                                    <input type="text" id="vlNewName" placeholder="z. B. Lehrkräfte Mathematik" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="new">
+                                    <label for="vlNewAlias">Alias *</label>
+                                    <input type="text" id="vlNewAlias" placeholder="lehrer-mathe" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="new">
+                                    <label for="vlNewSmtp">Primäre SMTP (optional)</label>
+                                    <input type="text" id="vlNewSmtp" placeholder="lehrer-mathe@ms365.schule" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="new">
+                                    <label>&nbsp;</label>
+                                    <div class="checkbox-row">
+                                        <input type="checkbox" id="vlNewExternal">
+                                        <label for="vlNewExternal" style="margin:0;font-weight:600;">Externe Absender erlauben (RequireSenderAuthenticationEnabled = $false)</label>
+                                    </div>
+                                </div>
+
+                                <div class="field field-full" data-act-show="set">
+                                    <label for="vlSetProps">Eigenschaften ändern (nur ausgefüllte Felder werden gesetzt)</label>
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetName">Neuer Anzeigename</label>
+                                    <input type="text" id="vlSetName" placeholder="leer = unverändert" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetSmtp">Neue primäre SMTP</label>
+                                    <input type="text" id="vlSetSmtp" placeholder="leer = unverändert" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetAlias">Neuer Alias</label>
+                                    <input type="text" id="vlSetAlias" placeholder="leer = unverändert" autocomplete="off">
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetHidden">In GAL ausblenden</label>
+                                    <select id="vlSetHidden">
+                                        <option value="" selected>– nicht ändern –</option>
+                                        <option value="true">Ja (HiddenFromAddressListsEnabled = $true)</option>
+                                        <option value="false">Nein (HiddenFromAddressListsEnabled = $false)</option>
+                                    </select>
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetExternal">Externe Absender erlauben</label>
+                                    <select id="vlSetExternal">
+                                        <option value="" selected>– nicht ändern –</option>
+                                        <option value="true">Ja (RequireSenderAuthenticationEnabled = $false)</option>
+                                        <option value="false">Nein (RequireSenderAuthenticationEnabled = $true)</option>
+                                    </select>
+                                </div>
+                                <div class="field" data-act-show="set">
+                                    <label for="vlSetModerated">Moderation aktivieren</label>
+                                    <select id="vlSetModerated">
+                                        <option value="" selected>– nicht ändern –</option>
+                                        <option value="true">Ja (ModerationEnabled = $true)</option>
+                                        <option value="false">Nein (ModerationEnabled = $false)</option>
+                                    </select>
+                                </div>
+
+                                <div class="field field-full" data-act-show="members owners new set delete">
+                                    <label for="vlActMembers">
+                                        <span data-only="members">Mitglieder – eine pro Zeile, optional <code>+</code> oder <code>-</code> als Präfix</span>
+                                        <span data-only="owners">Besitzer (ManagedBy) – eine UPN/E‑Mail pro Zeile (überschreibt komplett)</span>
+                                        <span data-only="new">Initiale Mitglieder (optional) – eine UPN/E‑Mail pro Zeile</span>
+                                        <span data-only="set">Initiale Besitzer (optional, ManagedBy)</span>
+                                        <span data-only="delete">– keine Eingabe nötig –</span>
+                                    </label>
+                                    <textarea id="vlActMembers" placeholder="alice@ms365.schule&#10;bob@ms365.schule&#10;-charlie@ms365.schule"></textarea>
+                                </div>
+
+                                <div class="field field-full">
+                                    <label for="vlPsScript">Generiertes Script</label>
+                                    <textarea id="vlPsScript" readonly style="min-height:240px;"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="vlPsCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                <button type="button" class="btn" id="vlPsDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script type="module" src="../src/shared/msal-auth-ui.js"></script>
+    <script src="../src/tools/verteilerlisten/verteilerlisten.js" defer></script>
+</body>
+</html>

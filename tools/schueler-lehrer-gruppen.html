@@ -4,230 +4,405 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
-    <title>MS365-Schulverwaltung – Schüler- und Lehrer:innen-Gruppen</title>
+    <title>MS365-Schulverwaltung – Lehrerinnen &amp; Schülerinnen</title>
     <link rel="stylesheet" href="../app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
+        /* An MS 365 Gruppenverwaltung (schulstruktur-sync) angelehnt */
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            padding-bottom: 8px;
+        }
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px; }
+        .muted { color: var(--muted); }
+
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin: 12px 0 0;
+        }
+        .mode-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .mode-actions .btn { margin: 0; padding: 10px 14px; border-radius: 10px; }
+
+        .tree {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .tree li { border-bottom: 1px solid #f0f1f3; }
+        .tree li:last-child { border-bottom: 0; }
+        .tree button {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 12px 14px;
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .tree button:hover { background: rgba(94, 114, 228, 0.06); }
+        .tree button[aria-current="true"] { background: rgba(94, 114, 228, 0.10); }
+        .tree button.slg-side-btn .slg-side-main { flex: 1; min-width: 0; }
+        .tree button.slg-side-btn .slg-side-title {
+            font-weight: 900;
+            color: #32325d;
+            display: block;
+            line-height: 1.25;
+        }
+        .tree button.slg-side-btn .slg-side-meta {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.88em;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+        .tree button.slg-side-btn .slg-side-count { text-align: right; flex-shrink: 0; }
+        .tree button.slg-side-btn .slg-side-count .n {
+            font-weight: 900;
+            font-size: 1.1em;
+            color: #32325d;
+            display: block;
+        }
+        .tree button.slg-side-btn .slg-side-count .l {
+            font-size: 0.85em;
+            color: var(--muted);
+            margin-top: 2px;
+            display: block;
+        }
+
+        .detail-tabs-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            padding-top: 2px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+            background: #fff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            box-shadow: 0 10px 22px rgba(50, 50, 93, 0.06);
+        }
+        .detail-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-tab-btn {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.18);
+            border-bottom: 0;
+            background: linear-gradient(180deg, rgba(94, 114, 228, 0.06) 0%, rgba(255, 255, 255, 0.92) 100%);
+            color: #32325d;
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+            padding: 10px 12px;
+            font-weight: 1000;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(50, 50, 93, 0.08);
+            font: inherit;
+        }
+        .detail-tab-btn[aria-selected="true"] {
+            background: #fff;
+            border-color: rgba(94, 114, 228, 0.30);
+            box-shadow: 0 12px 22px rgba(94, 114, 228, 0.16);
+            transform: translateY(1px);
+        }
+        .detail-tab-btn:focus-visible {
+            outline: 2px solid rgba(94, 114, 228, 0.55);
+            outline-offset: 3px;
+        }
+
+        .tab-panel { display: none; margin-top: 12px; }
+        .tab-panel.active { display: block; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
         @media (max-width: 900px) {
-            .slg-two-col { grid-template-columns: 1fr !important; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        .field label { display: block; font-weight: 700; margin: 0 0 6px; color: #495057; }
+        .field input,
+        .field select,
+        .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .field textarea { min-height: 88px; resize: vertical; }
+
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .detail-actions .btn { margin: 0; }
+
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+        }
+
+        .slg-kv {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 8px 12px;
+            margin-top: 10px;
+        }
+        .slg-kv-key { color: var(--muted); font-size: 0.92em; font-weight: 700; }
+        .slg-search-wrap { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+        .slg-search-wrap input { flex: 1 1 220px; min-width: 180px; }
+        .slg-search-results { margin-top: 12px; }
+        .slg-section-title { font-weight: 1000; color: #32325d; margin: 0 0 6px; font-size: 0.98em; }
+        .slg-owner-member-box {
+            margin-top: 10px;
+            max-height: 240px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+            font-size: 0.92em;
+        }
+        .slg-sync-log {
+            max-height: 200px;
+            overflow: auto;
+            padding: 10px 12px;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font-family: Consolas, monospace;
+            font-size: 0.85em;
+            line-height: 1.45;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container page-card">
         <div class="header">
             <h1>MS365-Schulverwaltung</h1>
             <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
                 <span class="header-tool-indicator__label">Werkzeug:</span>
-                <span class="header-tool-indicator__name"><i class="bi bi-people"></i>Schüler:innen‑ &amp; Lehrer:innen‑Gruppen</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-people"></i>Lehrerinnen &amp; Schülerinnen</span>
             </div>
-            <p>Zwei Microsoft‑365‑Gruppen für Schüler:innen und Lehrer:innen anlegen oder wählen, Mitglieder aus den Schul‑Listen zuordnen und optional als Teams bereitstellen.</p>
+            <p>Zwei Microsoft‑365‑Gruppen für Lehrerinnen &amp; Schülerinnen anlegen oder wählen, Mitglieder aus den Schul‑Listen zuordnen und optional als Teams bereitstellen. Als <strong>Besitzer</strong> werden Personen mit Rolle Direktion (o. Ä.) aus der Verwaltungsliste in den Schul‑Einstellungen gesetzt; sonst der angemeldete Benutzer.</p>
             <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
-                <a class="btn" href="../index.html"><i class="bi bi-arrow-left"></i>Dashboard</a>
-                <a class="btn" href="../tenant.html"><i class="bi bi-gear"></i>Schul‑Einstellungen</a>
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                        <a class="btn" href="../tenant.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-gear"></i>Schul‑Einstellungen</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></div>
+                </div>
             </div>
         </div>
 
-        <div id="panelSlg">
-            <div class="steps slg-steps">
-                <div class="step active" data-slg-step="1"><i class="bi bi-clipboard-check"></i>1. Daten prüfen</div>
-                <div class="step" data-slg-step="2"><i class="bi bi-people-fill"></i>2. Gruppen</div>
-                <div class="step" data-slg-step="3"><i class="bi bi-database"></i>3. Aus Listen</div>
-                <div class="step" data-slg-step="4"><i class="bi bi-pencil-square"></i>4. Manuell</div>
+        <div class="content">
+            <div class="alert alert-warning" style="margin-top:0;">
+                <strong>Microsoft Graph:</strong> Delegierte Berechtigungen z. B. <strong>Group.ReadWrite.All</strong>, <strong>User.Read.All</strong> – Administratorzustimmung.
+                Dieses Werkzeug verwaltet zwei <strong>Microsoft 365‑Gruppen (Unified)</strong>: eine für Schüler:innen und eine für Lehrer:innen. Mitglieder kommen aus den Schul‑Listen.
             </div>
-            <div class="content">
-                <div class="slg-step-content active" data-slg-step="1">
-                    <h2>Schritt 1: Daten aus den Schul‑Grundeinstellungen</h2>
-                    <div class="alert alert-info">
-                        <strong>Quelle:</strong> Die Listen <strong>Schüler:innen</strong> und <strong>Lehrer:innen</strong> kommen aus den
-                        <a href="../tenant.html">Schul‑Grundeinstellungen</a> (lokal im Browser). Für die geplanten Gruppen‑E‑Mail‑Adressen wird die
-                        <strong>Schul‑Domain</strong> verwendet (ohne <code>@</code>).
+
+            <div class="mode-tabs" aria-label="Anmeldung und Listen">
+                <div class="mode-actions">
+                    <button type="button" class="btn" id="slgBtnLogin"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
+                    <button type="button" class="btn" id="slgBtnReloadLists"><i class="bi bi-arrow-clockwise"></i>Listen neu einlesen</button>
+                </div>
+            </div>
+            <p class="muted" style="margin:10px 0 16px; line-height:1.45;">
+                Quelle: <a href="../tenant.html">Schul‑Einstellungen</a> (lokal im Browser). Besitzer: Direktion (Rolle „Direktion“ o. Ä.) aus Verwaltungsliste, sonst der angemeldete Benutzer.
+            </p>
+
+            <div class="layout">
+                <section class="panel" aria-label="Gruppen auswählen">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-list-ul" style="margin-right:10px;"></i>Listen</h2>
+                        <p class="muted" style="margin:8px 0 0; line-height:1.45;">Wählen Sie links <strong>Schüler:innen</strong> oder <strong>Lehrer:innen</strong> – dieselbe Struktur wie in der MS&nbsp;365 Gruppenverwaltung.</p>
                     </div>
-                    <div class="filter-section">
-                        <p style="margin:0 0 8px;line-height:1.5;">
-                            <strong>Domain:</strong> <code id="slgDomainPreview">–</code>
-                        </p>
-                        <p style="margin:0 0 8px;line-height:1.5;">
-                            Geplante Adressen (Vorschau, tatsächliche SMTP richtet sich nach verifizierten Domains in Microsoft 365):
-                            <br><strong>Schüler:innen:</strong> <code id="slgMailSchuelerPreview">schueler@…</code>
-                            <br><strong>Lehrer:innen:</strong> <code id="slgMailLehrerPreview">lehrer@…</code>
-                        </p>
-                        <ul style="margin:12px 0;padding-left:1.2em;line-height:1.55;">
-                            <li><strong id="slgStatStudents">0</strong> Einträge in der Schüler:innen‑Liste (mit E‑Mail: <strong id="slgStatStudentsMail">0</strong>)</li>
-                            <li><strong id="slgStatTeachers">0</strong> Einträge in der Lehrer:innen‑Liste (mit E‑Mail: <strong id="slgStatTeachersMail">0</strong>)</li>
+                    <div class="panel-body">
+                        <ul class="tree" id="slgListItems" aria-label="Schüler- und Lehrer-Gruppe">
+                            <li>
+                                <button type="button" class="slg-side-btn" data-slg-kind="schueler" aria-current="true">
+                                    <span class="slg-side-main">
+                                        <span class="slg-side-title"><i class="bi bi-people" aria-hidden="true"></i> Schüler:innen</span>
+                                        <span class="muted slg-side-meta" id="slgSchuelerLine">–</span>
+                                    </span>
+                                    <span class="slg-side-count">
+                                        <span class="n" id="slgSchuelerCount">0</span>
+                                        <span class="l">E‑Mails</span>
+                                    </span>
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="slg-side-btn" data-slg-kind="lehrer" aria-current="false">
+                                    <span class="slg-side-main">
+                                        <span class="slg-side-title"><i class="bi bi-person-badge" aria-hidden="true"></i> Lehrer:innen</span>
+                                        <span class="muted slg-side-meta" id="slgLehrerLine">–</span>
+                                    </span>
+                                    <span class="slg-side-count">
+                                        <span class="n" id="slgLehrerCount">0</span>
+                                        <span class="l">E‑Mails</span>
+                                    </span>
+                                </button>
+                            </li>
                         </ul>
-                        <p id="slgTenantWarn" class="alert alert-warning" style="display:none;margin-top:12px;"></p>
+                        <p class="muted" style="margin:12px 2px 0; font-size:0.92em;">
+                            <a href="schulstruktur-sync.html" style="text-decoration:none; color:inherit;">
+                                <i class="bi bi-box-arrow-up-right"></i> MS&nbsp;365 Gruppenverwaltung öffnen
+                            </a>
+                        </p>
                     </div>
-                    <div class="step-nav-row step-nav-row--forward-only">
-                        <button type="button" class="btn btn-success" id="slgBtnNext1"><i class="bi bi-arrow-right-circle"></i>Weiter zu Gruppen</button>
-                    </div>
-                </div>
+                </section>
 
-                <div class="slg-step-content" data-slg-step="2">
-                    <h2>Schritt 2: Microsoft 365‑Gruppen anlegen oder bestehende wählen</h2>
-                    <div class="alert alert-warning">
-                        <strong>Microsoft Graph:</strong> Delegierte Berechtigungen z. B.
-                        <strong>Group.ReadWrite.All</strong>, <strong>User.Read.All</strong> – Administratorzustimmung.
-                        Es werden <strong>Microsoft 365‑Gruppen</strong> (<code>Unified</code>) mit den Mail‑Nicknames <code>schueler</code> und <code>lehrer</code> erstellt oder verwaltet.
-                    </div>
-                    <p style="margin:0 0 14px;">
-                        <button type="button" class="btn" id="slgBtnLogin"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
-                    </p>
-                    <div class="slg-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
-                        <div class="filter-section" style="margin:0;">
-                            <h3 style="margin:0 0 12px;font-size:1.05rem;">Schüler:innen‑Gruppe</h3>
-                            <div class="filter-group">
-                                <label class="checkbox-label"><input type="radio" name="slgSchuelerMode" value="new" checked> <span>Neue Gruppe anlegen</span></label>
-                                <label class="checkbox-label" style="margin-top:6px;"><input type="radio" name="slgSchuelerMode" value="existing"> <span>Bestehende Gruppe verwenden</span></label>
-                            </div>
-                            <div id="slgSchuelerNewBlock">
-                                <div class="filter-group">
-                                    <label for="slgSchuelerDisplayName">Anzeigename</label>
-                                    <input type="text" id="slgSchuelerDisplayName" maxlength="200" value="Schüler:innen" autocomplete="off">
-                                </div>
-                                <div class="filter-group">
-                                    <label for="slgSchuelerMailNick">Mail‑Nickname</label>
-                                    <input type="text" id="slgSchuelerMailNick" value="schueler" maxlength="60" autocomplete="off" spellcheck="false" inputmode="latin" placeholder="z. B. schueler">
-                                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">Nur Buchstaben/Ziffern empfohlen. Das Tool normalisiert automatisch (entfernt Sonderzeichen, macht klein).</small>
-                                </div>
-                                <div class="filter-group" style="margin-top:6px;">
-                                    <label class="checkbox-label" for="slgSchuelerCreateTeam">
-                                        <input type="checkbox" id="slgSchuelerCreateTeam">
-                                        <span>Auch als <strong>Team</strong> anlegen (optional)</span>
-                                    </label>
-                                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">Standard: aus. Benötigt Graph‑Berechtigung <code>Team.Create</code> (delegiert) und ggf. Admin‑Zustimmung.</small>
-                                </div>
-                                <button type="button" class="btn btn-success" id="slgBtnCreateSchueler"><i class="bi bi-plus-circle"></i>Gruppe anlegen</button>
-                            </div>
-                            <div id="slgSchuelerExistBlock" style="display:none;">
-                                <div class="filter-group">
-                                    <label for="slgSchuelerGroupId">Object‑ID (GUID) der Gruppe</label>
-                                    <input type="text" id="slgSchuelerGroupId" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-                                </div>
-                                <div class="filter-group">
-                                    <label for="slgSchuelerGroupQuery">Suche (Mail‑Nickname oder Gruppen‑E‑Mail)</label>
-                                    <input type="text" id="slgSchuelerGroupQuery" autocomplete="off" spellcheck="false" placeholder="schueler oder schueler@ms365.schule">
-                                </div>
-                                <button type="button" class="btn" id="slgBtnResolveSchueler"><i class="bi bi-search"></i>Gruppe laden / prüfen</button>
-                                <button type="button" class="btn" id="slgBtnFindSchuelerNick"><i class="bi bi-envelope"></i>Per Mail‑Nickname suchen</button>
-                            </div>
-                            <p id="slgSchuelerSummary" class="slg-group-summary" style="display:none;margin-top:12px;padding:10px;background:#e7f0ff;border-radius:8px;border:1px solid #b6d4fe;font-size:0.92em;"></p>
+                <section class="panel" aria-label="Details">
+                    <div class="panel-head" style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+                        <div>
+                            <h2 id="slgDetailTitle" style="margin:0;">Schüler:innen</h2>
+                            <div class="muted" id="slgDetailSubtitle" style="margin-top:6px;">Gruppe matchen oder anlegen</div>
                         </div>
-                        <div class="filter-section" style="margin:0;">
-                            <h3 style="margin:0 0 12px;font-size:1.05rem;">Lehrer:innen‑Gruppe</h3>
-                            <div class="filter-group">
-                                <label class="checkbox-label"><input type="radio" name="slgLehrerMode" value="new" checked> <span>Neue Gruppe anlegen</span></label>
-                                <label class="checkbox-label" style="margin-top:6px;"><input type="radio" name="slgLehrerMode" value="existing"> <span>Bestehende Gruppe verwenden</span></label>
-                            </div>
-                            <div id="slgLehrerNewBlock">
-                                <div class="filter-group">
-                                    <label for="slgLehrerDisplayName">Anzeigename</label>
-                                    <input type="text" id="slgLehrerDisplayName" maxlength="200" value="Lehrer:innen" autocomplete="off">
-                                </div>
-                                <div class="filter-group">
-                                    <label for="slgLehrerMailNick">Mail‑Nickname</label>
-                                    <input type="text" id="slgLehrerMailNick" value="lehrer" maxlength="60" autocomplete="off" spellcheck="false" inputmode="latin" placeholder="z. B. lehrer">
-                                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">Nur Buchstaben/Ziffern empfohlen. Das Tool normalisiert automatisch (entfernt Sonderzeichen, macht klein).</small>
-                                </div>
-                                <div class="filter-group" style="margin-top:6px;">
-                                    <label class="checkbox-label" for="slgLehrerCreateTeam">
-                                        <input type="checkbox" id="slgLehrerCreateTeam">
-                                        <span>Auch als <strong>Team</strong> anlegen (optional)</span>
-                                    </label>
-                                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">Standard: aus. Benötigt Graph‑Berechtigung <code>Team.Create</code> (delegiert) und ggf. Admin‑Zustimmung.</small>
-                                </div>
-                                <button type="button" class="btn btn-success" id="slgBtnCreateLehrer"><i class="bi bi-plus-circle"></i>Gruppe anlegen</button>
-                            </div>
-                            <div id="slgLehrerExistBlock" style="display:none;">
-                                <div class="filter-group">
-                                    <label for="slgLehrerGroupId">Object‑ID (GUID) der Gruppe</label>
-                                    <input type="text" id="slgLehrerGroupId" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-                                </div>
-                                <div class="filter-group">
-                                    <label for="slgLehrerGroupQuery">Suche (Mail‑Nickname oder Gruppen‑E‑Mail)</label>
-                                    <input type="text" id="slgLehrerGroupQuery" autocomplete="off" spellcheck="false" placeholder="lehrer oder lehrer@ms365.schule">
-                                </div>
-                                <button type="button" class="btn" id="slgBtnResolveLehrer"><i class="bi bi-search"></i>Gruppe laden / prüfen</button>
-                                <button type="button" class="btn" id="slgBtnFindLehrerNick"><i class="bi bi-envelope"></i>Per Mail‑Nickname suchen</button>
-                            </div>
-                            <p id="slgLehrerSummary" class="slg-group-summary" style="display:none;margin-top:12px;padding:10px;background:#e7f0ff;border-radius:8px;border:1px solid #b6d4fe;font-size:0.92em;"></p>
+                        <div class="detail-actions" style="margin-top:0;">
+                            <button type="button" class="btn" id="slgBtnOpenEntra" disabled><i class="bi bi-box-arrow-up-right"></i>Entra öffnen</button>
+                            <button type="button" class="btn btn-danger" id="slgBtnUnmatch" disabled><i class="bi bi-x-circle"></i>Match lösen</button>
                         </div>
                     </div>
-                    <p style="color:#6c757d;font-size:0.9em;margin-top:14px;line-height:1.45;">
-                        <a href="https://entra.microsoft.com/#view/Microsoft_AAD_IAM/GroupsManagementMenuBlade/~/AllGroups" target="_blank" rel="noopener">Entra: Gruppen</a>
-                    </p>
-                    <div class="step-nav-row">
-                        <button type="button" class="btn" id="slgBtnBack2"><i class="bi bi-arrow-left"></i>Zurück</button>
-                        <button type="button" class="btn btn-success" id="slgBtnNext2"><i class="bi bi-arrow-right-circle"></i>Weiter zu Listen</button>
-                    </div>
-                </div>
+                    <div class="panel-body">
+                        <div class="detail-tabs-sticky" aria-label="Detail-Tabs">
+                            <div class="detail-tabs" role="tablist" id="slgDetailTabs" aria-label="Tabs Details">
+                                <button type="button" class="detail-tab-btn" id="slgTabBtnGeneral" role="tab" data-slg-tab="general" aria-selected="true" aria-controls="slgTabGeneral">Allgemein</button>
+                                <button type="button" class="detail-tab-btn" id="slgTabBtnOwners" role="tab" data-slg-tab="owners" aria-selected="false" aria-controls="slgTabOwners">Owner</button>
+                                <button type="button" class="detail-tab-btn" id="slgTabBtnMembers" role="tab" data-slg-tab="members" aria-selected="false" aria-controls="slgTabMembers">Mitglieder</button>
+                            </div>
+                        </div>
 
-                <div class="slg-step-content" data-slg-step="3">
-                    <h2>Schritt 3: Mitglieder aus den Schul‑Listen hinzufügen</h2>
-                    <div class="alert alert-info">
-                        Es werden nur Zeilen mit <strong>gültiger E‑Mail</strong> berücksichtigt. Bereits vorhandene Mitglieder werden übersprungen (Duplikate).
-                    </div>
-                    <p style="margin:0 0 12px;">
-                        <button type="button" class="btn btn-success" id="slgBtnSyncStudents"><i class="bi bi-person-plus-fill"></i>Schüler:innen‑Liste → Schüler:innen‑Gruppe</button>
-                        <button type="button" class="btn btn-success" id="slgBtnSyncTeachers" style="margin-left:8px;"><i class="bi bi-person-plus-fill"></i>Lehrer:innen‑Liste → Lehrer:innen‑Gruppe</button>
-                    </p>
-                    <h3 style="margin:16px 0 8px;font-size:1rem;">Protokoll</h3>
-                    <div id="slgSyncLog" style="max-height:220px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;line-height:1.45;"></div>
-                    <div class="step-nav-row">
-                        <button type="button" class="btn" id="slgBtnBack3"><i class="bi bi-arrow-left"></i>Zurück</button>
-                        <button type="button" class="btn btn-success" id="slgBtnNext3"><i class="bi bi-arrow-right-circle"></i>Weiter zu Manuell</button>
-                    </div>
-                </div>
+                        <div id="slgTabGeneral" class="tab-panel active" role="tabpanel" data-slg-tab-content="general" aria-labelledby="slgTabBtnGeneral">
+                            <div class="field" style="margin-top:0;">
+                                <label for="slgGroupSearch">Bestehende Gruppe suchen (Name, Mail, Alias, Beschreibung)</label>
+                                <div class="slg-search-wrap">
+                                    <input type="text" id="slgGroupSearch" autocomplete="off" placeholder="z. B. lehrer oder @schule.at">
+                                    <button type="button" class="btn" id="slgBtnSearch"><i class="bi bi-search"></i>Suchen</button>
+                                </div>
+                                <div id="slgGroupSearchResults" class="slg-search-results" style="display:none;"></div>
+                            </div>
 
-                <div class="slg-step-content" data-slg-step="4">
-                    <h2>Schritt 4: Manuell ergänzen und Gruppen öffnen</h2>
-                    <div class="filter-section">
-                        <div class="filter-group">
-                            <label for="slgManualTarget">Zielgruppe</label>
-                            <select id="slgManualTarget" style="max-width:100%;padding:8px;border-radius:8px;border:1px solid #ced4da;">
-                                <option value="schueler">Schüler:innen‑Gruppe</option>
-                                <option value="lehrer">Lehrer:innen‑Gruppe</option>
-                            </select>
+                            <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
+                                <div class="slg-section-title">Neue Gruppe anlegen</div>
+                                <p class="muted" style="margin:0 0 10px;">Legt eine Microsoft 365‑Gruppe (Unified) an. Optional auch als Team bereitstellen.</p>
+                                <div class="form-grid" style="margin-top:0;">
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="slgNewDisplayName">Anzeigename</label>
+                                        <input type="text" id="slgNewDisplayName" maxlength="200" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label for="slgNewMailNick">Alias / Mail‑Nickname</label>
+                                        <input type="text" id="slgNewMailNick" maxlength="60" autocomplete="off" spellcheck="false" inputmode="latin" placeholder="z. B. lehrer">
+                                    </div>
+                                    <div class="field">
+                                        <label for="slgNewDescription">Beschreibung</label>
+                                        <input type="text" id="slgNewDescription" maxlength="512" autocomplete="off" placeholder="z. B. Alle Lehrer:innen …">
+                                    </div>
+                                </div>
+                                <label class="checkbox-label" for="slgNewCreateTeam" style="margin-top:12px; display:inline-flex;">
+                                    <input type="checkbox" id="slgNewCreateTeam">
+                                    <span>Auch als <strong>Team</strong> anlegen (optional)</span>
+                                </label>
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="slgBtnCreate"><i class="bi bi-plus-circle"></i>Anlegen &amp; matchen</button>
+                                    <button type="button" class="btn" id="slgBtnRefreshGroup" disabled><i class="bi bi-arrow-clockwise"></i>Neu laden</button>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border);">
+                                <div class="slg-section-title">Aktueller Match</div>
+                                <div id="slgMatchSummary" class="muted" style="margin-top:8px; line-height:1.45;">Noch keine Gruppe gematcht.</div>
+                                <div class="slg-kv" id="slgMatchKv" style="display:none;">
+                                    <div class="slg-kv-key">Anzeigename</div><div id="slgKvName">–</div>
+                                    <div class="slg-kv-key">E‑Mail</div><div id="slgKvMail">–</div>
+                                    <div class="slg-kv-key">Alias</div><div id="slgKvNick">–</div>
+                                    <div class="slg-kv-key">Gruppen‑ID</div><div><code id="slgKvId">–</code></div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="filter-group">
-                            <label for="slgManualLines">E‑Mail‑Adressen oder UPNs (eine Zeile pro Person)</label>
-                            <textarea id="slgManualLines" rows="6" style="width:100%;padding:12px;font-family:Consolas,monospace;border:1px solid #ced4da;border-radius:8px;" placeholder="max@schule.at&#10;..."></textarea>
+
+                        <div id="slgTabOwners" class="tab-panel" role="tabpanel" data-slg-tab-content="owners" aria-labelledby="slgTabBtnOwners">
+                            <p class="muted" style="margin:0;">Owner werden aus der Verwaltungsliste (Rolle „Direktion“) abgeleitet und beim Anlegen/Synchronisieren gesetzt.</p>
+                            <div class="slg-section-title" style="margin-top:14px;">Geplante Owner (Direktion)</div>
+                            <div id="slgOwnerPreview" class="slg-owner-member-box"></div>
                         </div>
-                        <button type="button" class="btn btn-success" id="slgBtnManualAdd">Ausgewählte Zeilen hinzufügen</button>
+
+                        <div id="slgTabMembers" class="tab-panel" role="tabpanel" data-slg-tab-content="members" aria-labelledby="slgTabBtnMembers">
+                            <p class="muted" style="margin:0;">Mitglieder werden aus der jeweils gewählten Liste in die gematchte Gruppe hinzugefügt (Duplikate werden übersprungen).</p>
+                            <div class="detail-actions" style="margin-top:12px;">
+                                <button type="button" class="btn btn-success" id="slgBtnSync" disabled><i class="bi bi-person-plus-fill"></i>Mitglieder synchronisieren</button>
+                            </div>
+                            <div class="slg-section-title" style="margin-top:14px;">Vorschau (erste 30)</div>
+                            <div id="slgMemberPreview" class="slg-owner-member-box"></div>
+                            <div class="slg-section-title" style="margin-top:16px;">Protokoll</div>
+                            <div id="slgSyncLog" class="slg-sync-log"></div>
+                        </div>
                     </div>
-                    <p id="slgManualResult" style="margin-top:14px;padding:10px;background:#f8f9fa;border-radius:8px;display:none;font-size:0.92em;"></p>
-                    <div class="alert alert-info" style="margin-top:14px;">
-                        <strong>Mitglieder entfernen:</strong> Über diese Seite werden nur <strong>Zuordnungen hinzugefügt</strong>. Zum Entfernen einzelner Personen eignet sich die
-                        <a href="gruppen-uebersicht.html">Gruppenübersicht</a> (oder das Entra‑Portal).
-                    </div>
-                    <h3 style="margin:18px 0 8px;font-size:1rem;">Verknüpfungen</h3>
-                    <p style="margin:0;line-height:1.55;">
-                        <a href="#" id="slgLinkSchuelerEntra" style="display:none;" target="_blank" rel="noopener">Schüler:innen‑Gruppe in Entra</a>
-                        <span id="slgLinkSep" style="display:none;"> · </span>
-                        <a href="#" id="slgLinkLehrerEntra" style="display:none;" target="_blank" rel="noopener">Lehrer:innen‑Gruppe in Entra</a>
-                    </p>
-                    <div class="step-nav-row step-nav-row--back-only">
-                        <button type="button" class="btn" id="slgBtnBack4"><i class="bi bi-arrow-left"></i>Zurück</button>
-                    </div>
-                </div>
+                </section>
             </div>
-        </div>
 
-        <div class="toolbar bottom-toolbar" aria-label="Zwischenstand">
-            <button type="button" class="btn" id="slgBtnSaveState"><i class="bi bi-floppy"></i>Zwischenstand speichern</button>
-            <button type="button" class="btn" id="slgBtnLoadState"><i class="bi bi-folder2-open"></i>Gespeicherten Stand laden</button>
-            <button type="button" class="btn btn-danger" id="slgBtnClearStorage"><i class="bi bi-trash"></i>Lokalen Speicher löschen</button>
+            <div class="toolbar bottom-toolbar" style="margin-top:22px;" aria-label="Zwischenstand">
+                <button type="button" class="btn" id="slgBtnSaveState"><i class="bi bi-floppy"></i>Speichern</button>
+                <button type="button" class="btn" id="slgBtnLoadState"><i class="bi bi-folder2-open"></i>Laden</button>
+                <button type="button" class="btn btn-danger" id="slgBtnClearStorage"><i class="bi bi-trash"></i>Zurücksetzen</button>
+            </div>
         </div>
     </div>
 
     <div id="toast" class="toast" role="status"></div>
 
     <script src="../ms365-config.js"></script>
-    <script src="../src/shared/school-domain.js" defer></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
+    <script src="../src/shared/app-data-v2.js" defer></script>
     <script src="../src/shared/tenant-settings-core.js" defer></script>
-    <script src="../src/shared/polyglot-cmd.js" defer></script>
-    <script src="../src/shared/step-progress.js" defer></script>
-    <script src="../src/tools/schueler-lehrer-gruppen/schueler-lehrer-gruppen.js" defer></script>
+    <script src="../src/shared/graph-unified-groups.js" defer></script>
+    <script src="../src/tools/schueler-lehrer-gruppen/slg-gruppenverwaltung.js" defer></script>
 </body>
 </html>

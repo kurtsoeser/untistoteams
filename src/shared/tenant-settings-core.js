@@ -12,6 +12,19 @@
         return normStr(v).toUpperCase();
     }
 
+    /** Stabiler Mail-Nickname für Klassen-M365-Gruppe: jg{YYYY}{codeAlphaNum} (Kursteam/Umbenennen). */
+    function deriveClassStableMailNickname(yearRaw, codeRaw) {
+        const y = normStr(yearRaw);
+        const yy = /^\d{4}$/.test(y) ? y : '';
+        const code = normCode(codeRaw);
+        const tail = String(code || '')
+            .replace(/[^0-9A-Za-z]/g, '')
+            .toLowerCase()
+            .slice(0, 24);
+        if (!yy || !tail) return '';
+        return ('jg' + yy + tail).toLowerCase().slice(0, 60);
+    }
+
     function safeJsonParse(s) {
         try {
             return JSON.parse(String(s));
@@ -38,7 +51,9 @@
                 : normStr(o.domain);
 
         const subjectsIn = Array.isArray(o.subjects) ? o.subjects : [];
+        const argesIn = Array.isArray(o.arges) ? o.arges : [];
         const teachersIn = Array.isArray(o.teachers) ? o.teachers : [];
+        const adminIn = Array.isArray(o.admin) ? o.admin : (Array.isArray(o.administration) ? o.administration : []);
         const studentsIn = Array.isArray(o.students) ? o.students : [];
         const classesIn = Array.isArray(o.classes) ? o.classes : [];
 
@@ -54,6 +69,22 @@
             subjects.push({ code, name });
         });
 
+        const argesSeen = new Set();
+        const arges = [];
+        argesIn.forEach((a) => {
+            const code = normCode(a?.code);
+            const name = normStr(a?.name);
+            const subjectsRaw = Array.isArray(a?.subjects) ? a.subjects : Array.isArray(a?.faecher) ? a.faecher : [];
+            const subjects = (subjectsRaw || [])
+                .map((x) => normCode(x))
+                .filter(Boolean);
+            if (!code) return;
+            const key = code.toLowerCase();
+            if (argesSeen.has(key)) return;
+            argesSeen.add(key);
+            arges.push({ code, name, subjects });
+        });
+
         const teachersSeen = new Set();
         const teachers = [];
         teachersIn.forEach((t) => {
@@ -65,6 +96,22 @@
             if (teachersSeen.has(key)) return;
             teachersSeen.add(key);
             teachers.push({ code, name, email });
+        });
+
+        const adminSeen = new Set();
+        const admin = [];
+        adminIn.forEach((a) => {
+            const role = normStr(a?.role || a?.rolle || a?.title);
+            const name = normStr(a?.name);
+            const email = normStr(a?.email).toLowerCase();
+            const defaultKey = normStr(a?.defaultKey);
+            if (!role && !name && !email) return;
+            const key = (defaultKey || role || name || email).toLowerCase();
+            if (adminSeen.has(key)) return;
+            adminSeen.add(key);
+            const row = { role, name, email };
+            if (defaultKey) row.defaultKey = defaultKey;
+            admin.push(row);
         });
 
         const students = [];
@@ -85,18 +132,27 @@
             const year = /^\d{4}$/.test(yearRaw) ? yearRaw : '';
             const headName = normStr(c?.headName || c?.klassenvorstandName || c?.kvName);
             const headEmail = normStr(c?.headEmail || c?.klassenvorstandEmail || c?.kvEmail).toLowerCase();
+            let stableMailNickname = normStr(c?.stableMailNickname || '')
+                .replace(/[^a-zA-Z0-9]/g, '')
+                .toLowerCase()
+                .slice(0, 60);
+            if (!stableMailNickname && year && code) {
+                stableMailNickname = deriveClassStableMailNickname(year, code);
+            }
             if (!code && !name && !year && !headName && !headEmail) return;
             const key = (code || name).toLowerCase();
             if (classesSeen.has(key)) return;
             classesSeen.add(key);
-            classes.push({ code, name, year, headName, headEmail });
+            classes.push({ code, name, year, headName, headEmail, stableMailNickname });
         });
 
         return {
             version: CURRENT_VERSION,
             domain: normStr(domain),
             subjects,
+            arges,
             teachers,
+            admin,
             students,
             classes
         };
@@ -109,6 +165,13 @@
         } catch {
             // ignore
         }
+        try {
+            if (window.ms365AppDataV2 && typeof window.ms365AppDataV2.setCoreFromTenantSettings === 'function') {
+                window.ms365AppDataV2.setCoreFromTenantSettings(normalized);
+            }
+        } catch {
+            // ignore
+        }
         if (typeof window.ms365SetSchoolDomainNoAt === 'function' && normalized.domain) {
             window.ms365SetSchoolDomainNoAt(normalized.domain);
         }
@@ -116,9 +179,28 @@
     }
 
     function load() {
+        try {
+            if (window.ms365AppDataV2 && typeof window.ms365AppDataV2.getContainer === 'function') {
+                const c = window.ms365AppDataV2.getContainer();
+                if (c && c.core && c.years) {
+                    const cur = String((c.years && c.years.current) || '');
+                    const y = (c.years && c.years.byLabel && cur && c.years.byLabel[cur]) ? c.years.byLabel[cur] : { students: [], classes: [] };
+                    return normalizeSettings({
+                        domain: c.core.domain,
+                        subjects: c.core.subjects,
+                        arges: c.core.arges,
+                        teachers: c.core.teachers,
+                        admin: c.core.admin,
+                        students: y.students,
+                        classes: y.classes
+                    });
+                }
+            }
+        } catch {
+            // ignore
+        }
         const raw = loadRaw();
-        const normalized = normalizeSettings(raw || {});
-        return normalized;
+        return normalizeSettings(raw || {});
     }
 
     function getTeacherEmailMap() {
@@ -212,7 +294,8 @@
 
             const y = /^\d{4}$/.test(year) ? year : '';
             if (!code && !name && !y && !headName && !headEmail) return;
-            out.push({ code, name, year: y, headName, headEmail });
+            const stableMailNickname = deriveClassStableMailNickname(y, code);
+            out.push({ code, name, year: y, headName, headEmail, stableMailNickname });
         });
         return out;
     }
@@ -222,8 +305,37 @@
     window.ms365TenantSettingsSave = save;
     window.ms365TenantSettingsGetTeacherEmailMap = getTeacherEmailMap;
     window.ms365TenantSettingsParseSubjectsLines = parseLinesToSubjects;
+    window.ms365TenantSettingsParseArgesLines = function (text) {
+        const out = [];
+        parseDelimitedLines(text).forEach((parts) => {
+            const code = normCode(parts[0] || '');
+            const name = normStr(parts[1] || '');
+            const subjRaw = normStr(parts.slice(2).join(' '));
+            const subjects = subjRaw
+                ? subjRaw
+                      .split(/[,\s|]+/)
+                      .map((x) => normCode(x))
+                      .filter(Boolean)
+                : [];
+            if (!code) return;
+            out.push({ code, name, subjects });
+        });
+        return out;
+    };
     window.ms365TenantSettingsParseTeachersLines = parseLinesToTeachers;
+    window.ms365TenantSettingsParseAdminLines = function (text) {
+        const out = [];
+        parseDelimitedLines(text).forEach((parts) => {
+            const role = normStr(parts[0] || '');
+            const name = normStr(parts[1] || '');
+            const email = normStr(parts[2] || '').toLowerCase();
+            if (!role && !name && !email) return;
+            out.push({ role, name, email });
+        });
+        return out;
+    };
     window.ms365TenantSettingsParseStudentsLines = parseLinesToStudents;
     window.ms365TenantSettingsParseClassesLines = parseLinesToClasses;
+    window.ms365DeriveClassStableMailNickname = deriveClassStableMailNickname;
 })();
 

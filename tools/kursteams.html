@@ -93,7 +93,12 @@
             <p>Unterrichtsdaten aus WebUntis importieren oder manuell erfassen, Kursteam‑Namen und Besitzer festlegen, Teams als <code>EDU_Class</code> per Graph oder PowerShell anlegen.</p>
             <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
-                <a class="btn" href="../index.html" title="Zurück zum Dashboard" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="../index.html" title="Zurück zum Dashboard" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></div>
+                </div>
             </div>
         </div>
 
@@ -754,7 +759,9 @@ foreach ($Team in $TeamsList) {
     <div id="toast" class="toast" role="status"></div>
 
     <script src="../ms365-config.js"></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
     <script src="../src/shared/school-domain.js" defer></script>
+    <script src="../src/shared/app-data-v2.js" defer></script>
     <script src="../src/shared/tenant-settings-core.js" defer></script>
     <script src="../src/shared/tenant-settings-ui.js" defer></script>
     <script src="../src/shared/polyglot-cmd.js" defer></script>

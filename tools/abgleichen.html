@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Abgleichen</title>
+    <meta http-equiv="refresh" content="0; url=schulstruktur-sync.html?mode=match">
+    <script>
+        // Eigenes Modul "Abgleichen": wir nutzen die bestehende Oberfläche/Logik,
+        // starten aber gezielt im Abgleich-Modus.
+        try { sessionStorage.setItem('ms365-schulstruktur-sync-ui-mode-v1', 'match'); } catch { /* ignore */ }
+        try { window.location.replace('schulstruktur-sync.html?mode=match'); } catch { /* ignore */ }
+    </script>
+</head>
+<body>
+    <p style="font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;padding:16px;">
+        Lade Abgleichen …
+    </p>
+</body>
+</html>
+

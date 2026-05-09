@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – SharePoint Freigaben (Mandant)</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* Breite: global .page-card / .container aus app.css (1400px), nicht verengen */
+        .spo-lead {
+            color: #495057;
+            font-size: 0.98em;
+            line-height: 1.55;
+            margin: 0 0 8px;
+        }
+        .spo-panel {
+            border: 1px solid var(--border, #dee2e6);
+            border-radius: 14px;
+            background: #fff;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .spo-panel h2 {
+            margin: 0 0 6px;
+            font-size: 1.12em;
+            color: #32325d;
+            font-weight: 800;
+        }
+        .spo-panel .spo-sub {
+            margin: 0 0 16px;
+            font-size: 0.9em;
+            color: #6c757d;
+            line-height: 1.5;
+        }
+        .spo-klartext {
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+        .spo-klartext h3 { margin: 0 0 10px; font-size: 0.95em; color: #334155; font-weight: 800; }
+        .spo-klartext ul { margin: 0; padding-left: 1.15em; color: #334155; line-height: 1.55; font-size: 0.95em; }
+        .spo-klartext li { margin-bottom: 6px; }
+        .spo-klartext strong { color: #1e293b; }
+
+        .spo-ladder {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 8px;
+        }
+        @media (max-width: 900px) {
+            .spo-ladder { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 520px) {
+            .spo-ladder { grid-template-columns: 1fr; }
+        }
+        .spo-ladder-step {
+            position: relative;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 12px 14px;
+            background: #fff;
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .spo-ladder-step:hover {
+            border-color: rgba(94, 114, 228, 0.45);
+            box-shadow: 0 4px 14px rgba(50, 50, 93, 0.08);
+        }
+        .spo-ladder-step.is-active {
+            border-color: rgba(94, 114, 228, 0.85);
+            background: linear-gradient(180deg, rgba(94, 114, 228, 0.08) 0%, #fff 55%);
+            box-shadow: 0 4px 16px rgba(94, 114, 228, 0.12);
+        }
+        .spo-ladder-step .step-title {
+            display: block;
+            font-weight: 800;
+            font-size: 0.92em;
+            color: #32325d;
+            margin-bottom: 6px;
+        }
+        .spo-ladder-step .step-desc {
+            font-size: 0.82em;
+            color: #64748b;
+            line-height: 1.45;
+        }
+        .spo-ladder-step .step-api {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.72em;
+            font-family: ui-monospace, Consolas, monospace;
+            color: #94a3b8;
+            word-break: break-all;
+        }
+
+        .spo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        @media (max-width: 720px) { .spo-grid { grid-template-columns: 1fr; } }
+        .spo-field label { display: block; font-weight: 700; font-size: 0.9em; margin-bottom: 6px; color: #495057; }
+        .spo-field select, .spo-field textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 10px; font: inherit;
+        }
+        .spo-field textarea { min-height: 88px; resize: vertical; }
+        .spo-field .hint { font-size: 0.85em; color: #6c757d; margin-top: 6px; line-height: 1.45; }
+        .spo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .spo-log { font-family: Consolas, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word;
+            padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; min-height: 2.5em; }
+        pre.spo-pre { max-height: 280px; overflow: auto; margin: 0; padding: 12px; background: #1e1e1e; color: #d4d4d4; border-radius: 10px; font-size: 0.82em; }
+
+        .spo-readonly-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+            margin-top: 12px;
+            padding: 4px 2px 8px;
+        }
+        .spo-readonly-pill {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 16px 16px;
+            background: #fafbfc;
+            font-size: 0.88em;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        .spo-readonly-pill .k {
+            display: block;
+            font-weight: 800;
+            color: #334155;
+            margin: 0 0 10px;
+            font-size: 0.82em;
+            font-family: ui-monospace, Consolas, 'Segoe UI Mono', monospace;
+            word-break: break-all;
+        }
+        .spo-readonly-pill .spo-readonly-value {
+            display: block;
+            font-weight: 700;
+            font-size: 1.02em;
+            color: #0f172a;
+            line-height: 1.45;
+            margin: 0 0 12px;
+            word-break: break-word;
+        }
+        .spo-readonly-pill .d {
+            display: block;
+            font-size: 0.84em;
+            color: #64748b;
+            line-height: 1.5;
+            margin: 0;
+            padding-top: 12px;
+            border-top: 1px solid #e9ecef;
+        }
+        .spo-readonly-json {
+            display: block;
+            margin: 0 0 12px;
+            padding: 12px 12px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.78em;
+            font-family: ui-monospace, Consolas, monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 140px;
+            overflow: auto;
+            color: #1e293b;
+        }
+
+        .spo-admin-note {
+            border-left: 4px solid #fab005;
+            background: #fff9db;
+            padding: 12px 14px;
+            border-radius: 0 10px 10px 0;
+            font-size: 0.9em;
+            color: #5c4f00;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+        .spo-link-admin {
+            font-weight: 700;
+            color: #364fc7;
+        }
+        .spo-choice-grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        @media (max-width: 560px) { .spo-choice-grid2 { grid-template-columns: 1fr; } }
+        .spo-choice-grid4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        @media (max-width: 900px) { .spo-choice-grid4 { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 520px) { .spo-choice-grid4 { grid-template-columns: 1fr; } }
+        .spo-choice-btn {
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px 12px;
+            background: #fff;
+            cursor: pointer;
+            text-align: left;
+            font: inherit;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .spo-choice-btn:hover {
+            border-color: rgba(94, 114, 228, 0.45);
+            box-shadow: 0 4px 14px rgba(50, 50, 93, 0.08);
+        }
+        .spo-choice-btn.is-active {
+            border-color: rgba(94, 114, 228, 0.85);
+            background: linear-gradient(180deg, rgba(94, 114, 228, 0.08) 0%, #fff 55%);
+            box-shadow: 0 4px 16px rgba(94, 114, 228, 0.12);
+        }
+        .spo-choice-btn .ct-title {
+            display: block;
+            font-weight: 800;
+            font-size: 0.95em;
+            color: #32325d;
+            margin-bottom: 6px;
+        }
+        .spo-choice-btn .ct-desc {
+            font-size: 0.82em;
+            color: #64748b;
+            line-height: 1.45;
+        }
+        .spo-choice-btn .ct-api {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.72em;
+            font-family: ui-monospace, Consolas, monospace;
+            color: #94a3b8;
+        }
+        .spo-ps-host-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: flex-end;
+            margin-top: 14px;
+        }
+        .spo-ps-host-row .spo-field { flex: 1; min-width: 220px; margin: 0; }
+        textarea.spo-ps-ta {
+            width: 100%;
+            min-height: 200px;
+            font-family: Consolas, ui-monospace, monospace;
+            font-size: 0.82em;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ced4da;
+            margin-top: 12px;
+        }
+        details.spo-json details { margin-top: 8px; }
+        summary.spo-json-sum {
+            cursor: pointer;
+            font-weight: 700;
+            color: #495057;
+            padding: 8px 0;
+        }
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-share"></i>SharePoint – Mandanten-Freigaben</span>
+            </div>
+            <p class="spo-lead">Orientierung am <strong>SharePoint Admin Center</strong> (Teilen): Was Graph in <code>sharepointSettings</code> liefert, in Klartext – und dort bearbeiten, wo Microsoft dieselbe Logik anbindet.</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe</a></p>
+            <div class="toolbar">
+                <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+            </div>
+        </div>
+
+        <div class="content">
+        <div class="alert alert-info" style="margin:0 0 16px;">
+            <strong>Berechtigungen:</strong> <code>SharePointTenantSettings.Read.All</code> / <code>ReadWrite.All</code> – angemeldeter Benutzer laut Microsoft <strong>SharePoint Administrator</strong> oder <strong>Global Administrator</strong>.
+        </div>
+
+        <div class="spo-panel" id="panelKlartext" style="display:none;">
+            <h2><i class="bi bi-translate"></i>Aktueller Stand in Klartext</h2>
+            <p class="spo-sub">Kurz erklärt, was die geladenen Werte für SharePoint und OneDrive <em>praktisch</em> bedeuten.</p>
+            <div id="spoKlartext" class="spo-klartext" role="region" aria-live="polite"></div>
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-globe2"></i>Externes Teilen</h2>
+            <p class="spo-sub">Entspricht der Stufe „Wie weit nach außen?“ im Admin Center (für SharePoint und OneDrive gemeinsam über <code>sharingCapability</code>). Klicken Sie eine Stufe – unten wird das technische Dropdown mitgeführt.</p>
+            <div class="spo-ladder" role="group" aria-label="Stufe externes Teilen">
+                <button type="button" class="spo-ladder-step" data-sharing-cap="externalUserAndGuestSharing" id="capAnyone">
+                    <span class="step-title"><i class="bi bi-unlock"></i> Jeder</span>
+                    <span class="step-desc">Freigabe-Links ohne Anmeldung möglich („Jeder mit Link“).</span>
+                    <span class="step-api">externalUserAndGuestSharing</span>
+                </button>
+                <button type="button" class="spo-ladder-step" data-sharing-cap="externalUserSharingOnly" id="capGuests">
+                    <span class="step-title"><i class="bi bi-person-badge"></i> Neue &amp; vorhandene Gäste</span>
+                    <span class="step-desc">Externe Personen als Gäste; Anmeldung oder Bestätigungscode.</span>
+                    <span class="step-api">externalUserSharingOnly</span>
+                </button>
+                <button type="button" class="spo-ladder-step" data-sharing-cap="existingExternalUserSharingOnly" id="capExisting">
+                    <span class="step-title"><i class="bi bi-people"></i> Nur vorhandene Gäste</span>
+                    <span class="step-desc">Nur Personen, die bereits als Gast im Verzeichnis sind.</span>
+                    <span class="step-api">existingExternalUserSharingOnly</span>
+                </button>
+                <button type="button" class="spo-ladder-step" data-sharing-cap="disabled" id="capInternal">
+                    <span class="step-title"><i class="bi bi-building-lock"></i> Nur Organisation</span>
+                    <span class="step-desc">Kein Teilen nach außen – nur interne Konten.</span>
+                    <span class="step-api">disabled</span>
+                </button>
+            </div>
+            <div class="spo-field" style="margin-top:16px;">
+                <label for="fSharingCap">Technischer Wert (<code>sharingCapability</code>)</label>
+                <select id="fSharingCap" aria-label="sharingCapability Auswahl">
+                    <option value="disabled">disabled – nur intern</option>
+                    <option value="externalUserSharingOnly">externalUserSharingOnly – Gäste mit Anmeldung</option>
+                    <option value="externalUserAndGuestSharing">externalUserAndGuestSharing – inkl. anonyme Links</option>
+                    <option value="existingExternalUserSharingOnly">existingExternalUserSharingOnly – nur bestehende Gäste</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-funnel"></i>Domain-Einschränkungen</h2>
+            <p class="spo-sub">Zusätzlich zur Stufe oben: welche E-Mail-Domains bei externem Teilen erlaubt oder blockiert sind (wie „Weitere externe Freigabeeinstellungen“ im Admin Center).</p>
+            <div class="spo-grid">
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fDomainMode"><code>sharingDomainRestrictionMode</code></label>
+                    <select id="fDomainMode">
+                        <option value="none">none – keine Domain-Listen</option>
+                        <option value="allowList">allowList – nur erlaubte Domains</option>
+                        <option value="blockList">blockList – alle außer blockierte</option>
+                    </select>
+                    <p class="hint" style="margin-top:8px;">Die Domain-Listen greifen nur zusammen mit <strong>allowList</strong> bzw. <strong>blockList</strong>.</p>
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fAllowDomains"><code>sharingAllowedDomainList</code> (eine Domain pro Zeile)</label>
+                    <textarea id="fAllowDomains" placeholder="partner.schule.at"></textarea>
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fBlockDomains"><code>sharingBlockedDomainList</code> (eine Domain pro Zeile)</label>
+                    <textarea id="fBlockDomains"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-person-check"></i>Gast- und Weitergabe-Verhalten</h2>
+            <p class="spo-sub">Optionen, die Microsoft ebenfalls in den erweiterten Freigabe-Einstellungen bündelt.</p>
+            <div class="spo-field spo-field--full" style="margin-bottom:10px;">
+                <label><input type="checkbox" id="fReshare"> <strong>Gäste dürfen erneut teilen</strong> (<code>isResharingByExternalUsersEnabled</code>)</label>
+                <p class="hint">Wenn aus: Gäste können Inhalte, die sie nicht besitzen, nicht weiter freigeben.</p>
+            </div>
+            <div class="spo-field spo-field--full">
+                <label><input type="checkbox" id="fMatchInvite"> <strong>Gast muss mit eingeladenem Konto anmelden</strong> (<code>isRequireAcceptingUserToMatchInvitedUserEnabled</code>)</label>
+                <p class="hint">Erhöht die Sicherheit bei Einladungen an eine bestimmte E-Mail-Adresse.</p>
+            </div>
+            <div class="spo-actions">
+                <button type="button" class="btn" id="btnLoad"><i class="bi bi-cloud-download"></i>Stand laden</button>
+                <button type="button" class="btn btn-success" id="btnSave"><i class="bi bi-check2-circle"></i>Änderungen speichern</button>
+            </div>
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-link-45deg"></i>Datei- und Ordnerlinks</h2>
+            <p class="spo-sub">Welche <strong>Standardberechtigung</strong> (Lesen vs. Bearbeiten) und welcher <strong>Link-Typ</strong> beim Teilen vorgewählt ist – so wie im Screenshot des SharePoint Admin Centers.</p>
+            <div class="spo-admin-note">
+                <strong>Sie übersehen nichts im Graph-Teil:</strong> <code>GET/PATCH …/admin/sharepoint/settings</code> liefert dafür <strong>keine</strong> Properties (weder in v1.0 noch in der aktuellen beta-Doku). Online im Tool speicherbar sind weiter nur die Blöcke oben (Graph). Für <strong>Standard-Link</strong> und <strong>Standardberechtigung</strong> nutzen Sie das Admin Center oder das <strong>generierte PowerShell</strong> unten (<code>Set-SPOTenant</code>).
+            </div>
+
+            <h3 style="margin:22px 0 8px;font-size:1rem;color:#32325d;"><i class="bi bi-shield-check"></i> Standardberechtigung für Freigabelinks</h3>
+            <p class="hint" style="margin:0 0 10px;">Entspricht „Wählen Sie die Berechtigung aus, die standardmäßig für Freigabelinks ausgewählt ist“ – Parameter <code>-DefaultLinkPermission</code>.</p>
+            <input type="hidden" id="spoDefPerm" value="View">
+            <div class="spo-choice-grid2" role="group" aria-label="Standardberechtigung Freigabelink">
+                <button type="button" class="spo-choice-btn is-active" data-def-perm="View" id="permView">
+                    <span class="ct-title"><i class="bi bi-eye"></i> Anzeigen (Lesen)</span>
+                    <span class="ct-desc">Empfohlen, wenn Inhalte vor allem gelesen werden sollen.</span>
+                    <span class="ct-api">DefaultLinkPermission = View</span>
+                </button>
+                <button type="button" class="spo-choice-btn" data-def-perm="Edit" id="permEdit">
+                    <span class="ct-title"><i class="bi bi-pencil-square"></i> Bearbeiten</span>
+                    <span class="ct-desc">Standardmäßig Bearbeitungsrechte auf den Freigabelink.</span>
+                    <span class="ct-api">DefaultLinkPermission = Edit</span>
+                </button>
+            </div>
+
+            <h3 style="margin:22px 0 8px;font-size:1rem;color:#32325d;"><i class="bi bi-link-45deg"></i> Standardtyp des Links (Vorauswahl)</h3>
+            <p class="hint" style="margin:0 0 10px;">Welcher Radio-Button beim Teilen vorgewählt ist – Parameter <code>-DefaultSharingLinkType</code>.</p>
+            <input type="hidden" id="spoDefLinkType" value="Internal">
+            <div class="spo-choice-grid4" role="group" aria-label="Standardtyp Freigabelink">
+                <button type="button" class="spo-choice-btn" data-def-link="AnonymousAccess" id="linkAnyone">
+                    <span class="ct-title"><i class="bi bi-unlock"></i> Jeder mit dem Link</span>
+                    <span class="ct-desc">Anonymer Link (nur sinnvoll, wenn externe Freigabe „Jeder“ erlaubt ist).</span>
+                    <span class="ct-api">AnonymousAccess</span>
+                </button>
+                <button type="button" class="spo-choice-btn is-active" data-def-link="Internal" id="linkOrg">
+                    <span class="ct-title"><i class="bi bi-building"></i> Nur Organisation</span>
+                    <span class="ct-desc">Nur Personen in Ihrem Microsoft-365-Mandanten.</span>
+                    <span class="ct-api">Internal</span>
+                </button>
+                <button type="button" class="spo-choice-btn" data-def-link="Direct" id="linkSpecific">
+                    <span class="ct-title"><i class="bi bi-person-check"></i> Bestimmte Personen</span>
+                    <span class="ct-desc">Nur explizit genannte Personen (wie „Spezifische Personen“).</span>
+                    <span class="ct-api">Direct</span>
+                </button>
+                <button type="button" class="spo-choice-btn" data-def-link="None" id="linkNone">
+                    <span class="ct-title"><i class="bi bi-slash-circle"></i> Keine Vorgabe</span>
+                    <span class="ct-desc">Setzt den Typ auf <code>None</code> (selten gewünscht).</span>
+                    <span class="ct-api">None</span>
+                </button>
+            </div>
+
+            <h3 style="margin:22px 0 8px;font-size:1rem;color:#32325d;"><i class="bi bi-terminal"></i> PowerShell zum Anwenden</h3>
+            <p class="hint" style="margin:0 0 8px;">Tragen Sie Ihren SharePoint-Host ein (ohne <code>https://</code>) oder holen Sie ihn per Graph. Anschließend Skript in der <strong>SharePoint Online Management Shell</strong> oder Windows PowerShell mit Modul ausführen.</p>
+            <div class="spo-ps-host-row">
+                <div class="spo-field">
+                    <label for="spoPsHost">SharePoint-Host</label>
+                    <input type="text" id="spoPsHost" placeholder="contoso.sharepoint.com" spellcheck="false" autocomplete="off">
+                </div>
+                <button type="button" class="btn" id="btnSpoResolveHost"><i class="bi bi-cloud-download"></i>Hostname per Graph</button>
+            </div>
+            <textarea id="spoPsScript" class="spo-ps-ta" readonly aria-label="Generiertes PowerShell"></textarea>
+            <div class="spo-actions" style="margin-top:10px;">
+                <button type="button" class="btn btn-success" id="btnSpoPsCopy"><i class="bi bi-clipboard"></i>Skript kopieren</button>
+                <button type="button" class="btn" id="btnSpoPsDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+            </div>
+            <p class="hint" style="margin-top:12px;">Dokumentation: <a href="https://learn.microsoft.com/en-us/powershell/module/sharepoint-online/set-spotenant" target="_blank" rel="noopener">Set-SPOTenant</a> · Admin Center: <a class="spo-link-admin" href="https://go.microsoft.com/fwlink/?linkid=2185213" target="_blank" rel="noopener">Teilen-Richtlinien</a></p>
+        </div>
+
+        <div class="spo-panel" id="panelReadonly" style="display:none;">
+            <h2><i class="bi bi-info-square"></i>Weitere Mandanten-Werte (nur Anzeige)</h2>
+            <p class="spo-sub">Aus derselben API-Antwort – zur Einordnung. Bearbeiten Sie diese Punkte in den jeweiligen Admin-Center-Bereichen oder über weitere Graph-Eigenschaften, sofern verfügbar.</p>
+            <div id="spoReadonlyGrid" class="spo-readonly-grid"></div>
+        </div>
+
+        <div class="spo-panel">
+            <h2>Protokoll</h2>
+            <div id="spoLog" class="spo-log">Noch keine Aktion.</div>
+        </div>
+
+        <div class="spo-panel">
+            <details>
+                <summary class="spo-json-sum">Rohantwort JSON (für Support / Doku)</summary>
+                <pre id="spoJson" class="spo-pre" style="margin-top:10px;">{}</pre>
+            </details>
+        </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script type="module" src="../src/shared/msal-auth-ui.js"></script>
+    <script src="../src/tools/sharepoint/spo-graph-shared.js"></script>
+    <script src="../src/tools/sharepoint/sharepoint-mandant-teilen.js" defer></script>
+</body>
+</html>

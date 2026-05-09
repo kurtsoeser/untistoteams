@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Freigegebene Postfächer</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            padding-bottom: 28px;
+        }
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px; }
+        .muted { color: var(--muted); }
+        .tree-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .tree-filter label { display: block; font-weight: 700; color: #495057; margin-bottom: 6px; font-size: 0.92em; }
+        .tree-filter input, .tree-filter select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+        }
+        .tree {
+            margin: 12px 0 0;
+            padding: 0;
+            list-style: none;
+            max-height: 64vh;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .tree li { border-bottom: 1px solid #f0f1f3; }
+        .tree li:last-child { border-bottom: 0; }
+        .tree button {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: baseline;
+        }
+        .tree button:hover { background: rgba(94,114,228,0.06); }
+        .tree button[aria-current="true"] { background: rgba(94,114,228,0.10); }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e9ecef;
+            background: #fafbff;
+            color: #495057;
+            font-weight: 800;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        .field label { display: block; font-weight: 700; margin: 0 0 6px; color: #495057; }
+        .field > input,
+        .field > select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .check-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+        @media (max-width: 900px) {
+            .check-grid { grid-template-columns: 1fr; }
+        }
+        .check-card {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fafbff;
+            color: #495057;
+            font-weight: 800;
+        }
+        .check-card input { margin-top: 3px; }
+        .field-help { margin-top: 6px; color: var(--muted); font-size: 0.88em; line-height: 1.4; }
+        .field textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+            min-height: 160px;
+            resize: vertical;
+            font-family: Consolas, 'Segoe UI', monospace;
+            font-size: 0.9em;
+            line-height: 1.35;
+        }
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+        .detail-actions .btn { margin: 0; }
+        .mb-toolbar-row {
+            display: grid !important;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            width: 100%;
+        }
+        .mb-toolbar-left,
+        .mb-toolbar-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            min-width: 0;
+        }
+        .mb-toolbar-actions {
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+        .mb-toolbar-row .btn {
+            margin: 0;
+            padding: 9px 12px;
+            border-radius: 10px;
+            font-size: 0.88em;
+            white-space: nowrap;
+        }
+        .mb-toolbar-row .btn .bi { margin-right: 5px; }
+        .mb-toolbar-row #ms365AuthWidget {
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            min-width: 0;
+        }
+        .mb-toolbar-row #ms365AuthActions { flex-wrap: nowrap !important; gap: 8px !important; }
+        .mb-toolbar-row #ms365AuthBadge {
+            max-width: 260px;
+            min-width: 0;
+        }
+        .mb-toolbar-row #ms365AuthBadgeText {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        @media (max-width: 900px) {
+            .mb-toolbar-row {
+                grid-template-columns: 1fr;
+                justify-items: center;
+            }
+            .mb-toolbar-actions { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body data-ms365-skip-tenant-domain-prompt="true">
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-inbox"></i>Freigegebene Postfächer</span>
+            </div>
+            <p>Freigegebene Postfächer einlesen, Details anzeigen und PowerShell für Erstellung/Berechtigungen erzeugen.</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div class="mb-toolbar-row" style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div class="mb-toolbar-left">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div class="mb-toolbar-actions">
+                        <button type="button" class="btn btn-success" id="mbBtnNew"><i class="bi bi-plus-circle"></i>Neu</button>
+                        <button type="button" class="btn btn-success" id="mbBtnLoadExo" title="Exchange-Export als JSON"><i class="bi bi-box-seam"></i>Export</button>
+                        <label class="btn" for="mbImportJson" style="cursor:pointer;" title="JSON importieren"><i class="bi bi-upload"></i>Import</label>
+                        <input type="file" id="mbImportJson" accept="application/json,.json" style="display:none;">
+                        <button type="button" class="btn" id="mbBtnLoadGraph" title="Graph einlesen (heuristisch)"><i class="bi bi-cloud-download"></i>Graph</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="layout">
+                <section class="panel" aria-label="Freigegebene Postfächer (Liste)">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-inbox" style="margin-right:10px;"></i>Freigegebene Postfächer</h2>
+                        <div class="tree-filter" aria-label="Filter">
+                            <div style="grid-column:1 / -1;">
+                                <label for="mbSearch">Suche</label>
+                                <input type="text" id="mbSearch" placeholder="z. B. sekretariat, office …" autocomplete="off">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div id="mbProgress" class="hint" style="display:none; margin-bottom:12px;"></div>
+                        <div id="mbExoExportWrap" class="hint" style="display:none; margin-bottom:12px;">
+                            <div style="font-weight:900;color:#32325d;margin-bottom:8px;"><i class="bi bi-terminal"></i>Exchange Online Export (SharedMailbox → JSON)</div>
+                            <div class="muted" style="margin-bottom:10px; line-height:1.45;">
+                                1) Script kopieren oder als <code>.ps1</code> speichern und in PowerShell ausführen.<br>
+                                2) Es wird eine Datei <code>shared-mailboxes-export.json</code> erzeugt.<br>
+                                3) Diese Datei hier mit <strong>Import (JSON)</strong> laden.
+                            </div>
+                            <div class="field" style="margin:0;">
+                                <label for="mbExoExportScript">Script</label>
+                                <textarea id="mbExoExportScript" readonly></textarea>
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="mbExoCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                <button type="button" class="btn" id="mbExoDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                                <button type="button" class="btn" id="mbExoHide"><i class="bi bi-x-circle"></i>Schließen</button>
+                            </div>
+                        </div>
+                        <ul class="tree" id="mbTree" aria-label="Liste freigegebener Postfächer"></ul>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="Details">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-pencil-square" style="margin-right:10px;"></i>Details</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hint" id="mbHint">
+                            Links ein freigegebenes Postfach auswählen, <strong>Neu</strong> für ein Erstellungs-Script öffnen oder <strong>Tenant einlesen</strong> starten.
+                        </div>
+                        <div id="mbNewDetail" style="display:none;">
+                            <div class="hint">
+                                <strong>Neues freigegebenes Postfach:</strong> Fülle die Stammdaten und optional Delegierte aus.
+                                Das Script erstellt das Postfach mit Exchange Online PowerShell und setzt danach die gewählten Rechte.
+                            </div>
+                            <div class="form-grid" style="margin-top:12px;">
+                                <div class="field">
+                                    <label for="mbNewDisplayName">Anzeigename</label>
+                                    <input type="text" id="mbNewDisplayName" placeholder="z. B. Maturaball26" autocomplete="off">
+                                </div>
+                                <div class="field">
+                                    <label for="mbNewAlias">Alias</label>
+                                    <input type="text" id="mbNewAlias" placeholder="z. B. maturaball26" autocomplete="off">
+                                    <div class="field-help">Ohne Leerzeichen/Sonderzeichen, z. B. der lokale Teil der Adresse.</div>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbNewPrimarySmtp">Primäre E‑Mail-Adresse</label>
+                                    <input type="email" id="mbNewPrimarySmtp" placeholder="maturaball26@schule.at" autocomplete="off">
+                                    <div class="field-help">Optional, aber empfohlen. Ohne Angabe verwendet Exchange die Standarddomain des Tenants.</div>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbNewDescription">Beschreibung/Notizen</label>
+                                    <textarea id="mbNewDescription" placeholder="z. B. Freigegebenes Postfach für Organisation Maturaball 2026"></textarea>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label>Rechte für Delegierte</label>
+                                    <div class="check-grid">
+                                        <label class="check-card"><input type="checkbox" id="mbNewRightFullAccess" checked>FullAccess</label>
+                                        <label class="check-card"><input type="checkbox" id="mbNewRightSendAs">SendAs</label>
+                                        <label class="check-card"><input type="checkbox" id="mbNewRightSendOnBehalf">SendOnBehalf</label>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="mbNewAutoMapping">Automapping</label>
+                                    <select id="mbNewAutoMapping">
+                                        <option value="false" selected>Nein – AutoMapping aus</option>
+                                        <option value="true">Ja – AutoMapping ein</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="mbNewHiddenFromAddressLists">Adresslisten</label>
+                                    <select id="mbNewHiddenFromAddressLists">
+                                        <option value="false" selected>Sichtbar in Adresslisten</option>
+                                        <option value="true">Aus Adresslisten ausblenden</option>
+                                    </select>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbNewDelegates">Delegierte (UPN/E‑Mail) – eine pro Zeile</label>
+                                    <textarea id="mbNewDelegates" placeholder="person@ms365.schule&#10;andere@ms365.schule"></textarea>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbNewPsScript">Generiertes Erstellungs-Script</label>
+                                    <textarea id="mbNewPsScript" readonly></textarea>
+                                </div>
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="mbNewPsCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                <button type="button" class="btn" id="mbNewPsDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                                <button type="button" class="btn" id="mbNewCancel"><i class="bi bi-x-circle"></i>Schließen</button>
+                            </div>
+                        </div>
+                        <div id="mbDetail" style="display:none;">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="mbName">Anzeigename</label>
+                                    <input type="text" id="mbName" readonly>
+                                </div>
+                                <div class="field">
+                                    <label for="mbMail">E‑Mail</label>
+                                    <input type="text" id="mbMail" readonly>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbUpn">UPN</label>
+                                    <input type="text" id="mbUpn" readonly>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbId">Objekt‑ID</label>
+                                    <input type="text" id="mbId" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                                </div>
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" class="btn" id="mbCopyUpn"><i class="bi bi-clipboard"></i>UPN kopieren</button>
+                            </div>
+
+                            <div class="hint" style="margin-top:14px;">
+                                <strong>PowerShell:</strong> Für Berechtigungen (FullAccess/SendAs/SendOnBehalf) ist Exchange Online maßgeblich.
+                                Das Script unten liest Berechtigungen aus – und kann optional Änderungen setzen.
+                            </div>
+
+                            <div class="form-grid" style="margin-top:12px;">
+                                <div class="field">
+                                    <label for="mbPsMode">Modus</label>
+                                    <select id="mbPsMode">
+                                        <option value="read" selected>Nur anzeigen (Report)</option>
+                                        <option value="set">Setzen (Add/Remove)</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label for="mbPsRights">Rechte</label>
+                                    <select id="mbPsRights">
+                                        <option value="FullAccess" selected>FullAccess</option>
+                                        <option value="SendAs">SendAs</option>
+                                        <option value="SendOnBehalf">SendOnBehalf</option>
+                                    </select>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbPsDelegates">Delegierte (UPN/E‑Mail) – eine pro Zeile</label>
+                                    <textarea id="mbPsDelegates" placeholder="person@ms365.schule&#10;andere@ms365.schule"></textarea>
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="mbPsScript">Generiertes Script</label>
+                                    <textarea id="mbPsScript" readonly></textarea>
+                                </div>
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" class="btn btn-success" id="mbPsCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                <button type="button" class="btn" id="mbPsDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script type="module" src="../src/shared/msal-auth-ui.js"></script>
+    <script src="../src/tools/postfaecher/postfaecher.js" defer></script>
+</body>
+</html>
+

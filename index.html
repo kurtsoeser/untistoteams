@@ -7,37 +7,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="app.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            margin: 0;
-            padding: 24px;
-            padding-bottom: 96px; /* Platz für fixierte Fußzeilen-Links */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .card {
-            width: min(1420px, 100%);
-            background: white;
-            border-radius: 14px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        header {
-            background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
-            color: white;
-            padding: 28px 22px;
-            text-align: center;
-        }
-        header h1 {
-            margin: 0 0 8px;
-            font-size: 1.6em;
-        }
+        /* Dashboard-spezifisch: nur Grid/Kacheln – Basislayout kommt aus app.css */
+        body { padding-bottom: 96px; /* Platz für fixierte Fußzeilen-Links */ }
+        .header h1 { margin: 0 0 6px; font-size: 1.45em; }
         .app-brand-logo {
-            margin: 2px auto 10px;
-            max-width: min(360px, 92vw);
+            margin: 2px auto 8px;
+            max-width: min(320px, 92vw);
             display: flex;
             justify-content: center;
         }
@@ -45,11 +20,11 @@
             display: block;
             width: auto;
             max-width: 100%;
-            max-height: 96px;
+            max-height: 72px;
             height: auto;
             vertical-align: top;
         }
-        header .app-tagline {
+        .header .app-tagline {
             margin: 0;
             opacity: 0.95;
             font-size: 1.02em;
@@ -59,8 +34,163 @@
             margin-left: auto;
             margin-right: auto;
         }
-        header p { margin: 0; opacity: 0.95; }
-        main { padding: 22px; }
+        .header p { margin: 0; opacity: 0.95; }
+        .content { padding-top: 16px; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .dashboard-toolbar {
+            margin: 0 0 18px;
+            padding: 14px 16px;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #fff 0%, #f8f9fa 100%);
+        }
+        .dashboard-toolbar-section-title {
+            display: block;
+            width: 100%;
+            font-size: 0.78em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #868e96;
+            margin: 0 0 10px;
+        }
+        .dashboard-toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .dashboard-toolbar-row:last-child { margin-bottom: 0; }
+        .dashboard-toolbar-search-row {
+            margin-bottom: 0;
+            padding: 4px 2px 2px;
+        }
+        .dashboard-search-input {
+            flex: 1;
+            min-width: 200px;
+            min-height: 46px;
+            padding: 12px 16px;
+            border: 1px solid #ced4da;
+            border-radius: 14px;
+            font: inherit;
+            font-size: 1em;
+            background: #fff;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+        .dashboard-search-input::placeholder {
+            color: #adb5bd;
+        }
+        .dashboard-search-input:focus {
+            outline: 2px solid rgba(94, 114, 228, 0.45);
+            outline-offset: 2px;
+            border-color: rgba(94, 114, 228, 0.35);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(94, 114, 228, 0.08);
+        }
+        .dashboard-search-kbd {
+            flex-shrink: 0;
+            color: #6c757d;
+            font-size: 0.82em;
+            white-space: nowrap;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: #fff;
+            border: 1px solid #e9ecef;
+        }
+        .dashboard-search-kbd kbd {
+            display: inline-block;
+            padding: 3px 7px;
+            margin: 0 1px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: #f8f9fa;
+            font-size: 0.88em;
+            font-family: inherit;
+            font-weight: 600;
+            color: #495057;
+        }
+        .dashboard-chip-row-label {
+            display: block;
+            width: 100%;
+            font-size: 0.78em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #868e96;
+            margin-bottom: 6px;
+        }
+        .dashboard-toolbar-search-row + .dashboard-chip-row-label {
+            margin-top: 18px;
+        }
+        .dashboard-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .dashboard-chip {
+            border: 1px solid #ced4da;
+            background: #fff;
+            color: #495057;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font: inherit;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+        }
+        .dashboard-chip:hover {
+            border-color: rgba(94, 114, 228, 0.35);
+            color: #32325d;
+        }
+        .dashboard-chip.is-active {
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.18) 0%, rgba(130, 94, 228, 0.12) 100%);
+            border-color: rgba(94, 114, 228, 0.45);
+            color: #32325d;
+        }
+        .choice[data-tool-id] {
+            position: relative;
+            padding-top: 40px;
+        }
+        .dashboard-fav-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #adb5bd;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            transition: color 150ms ease, background 150ms ease, transform 150ms ease;
+        }
+        .dashboard-fav-btn:hover {
+            color: #f59f00;
+            background: #fff;
+            transform: scale(1.05);
+        }
+        .dashboard-fav-btn[aria-pressed="true"] {
+            color: #f59f00;
+        }
+        .dashboard-fav-btn .bi {
+            font-size: 1.15em;
+        }
         .grid {
             display: grid;
             gap: 16px;
@@ -127,39 +257,8 @@
         .featured-main {
             min-width: 0;
         }
-        .dashboard-domain {
-            border: 1px solid #dee2e6;
-            border-radius: 12px;
-            padding: 14px 16px;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-        .dashboard-domain label {
-            display: block;
-            font-weight: 600;
-            color: #32325d;
-            margin-bottom: 8px;
-            font-size: 0.95em;
-            line-height: 1.3;
-        }
-        .dashboard-domain input[type="text"] {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 10px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            font-size: 1em;
-        }
-        .dashboard-domain .domain-hint {
-            margin: 10px 0 0;
-            font-size: 0.82em;
-            color: #6c757d;
-            line-height: 1.45;
-        }
-        .dashboard-domain .domain-hint a {
-            color: #5e72e4;
-            font-weight: 600;
-        }
+        /* Domain-Kachel entfernt: Schul-Grundeinstellungen nutzt volle Breite */
+        .featured-split { grid-template-columns: 1fr; }
         @media (max-width: 720px) {
             .featured-split {
                 grid-template-columns: 1fr;
@@ -240,24 +339,109 @@
         .choice[data-tool-id].dragging { opacity: 0.55; transform: rotate(0.15deg); }
         .choice[data-tool-id].drag-over { outline: 2px dashed rgba(94, 114, 228, 0.65); outline-offset: 6px; }
         .dashboard-reorder-hint { margin: 18px 0 0; color: #6c757d; font-size: 0.9em; }
+
+        .dashboard-featured {
+            margin-bottom: 20px;
+        }
+        .dashboard-featured .choice.featured {
+            grid-column: auto;
+        }
+        .dashboard-tabs {
+            margin-top: 4px;
+        }
+        .dashboard-tablist {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 0;
+            padding: 4px 4px 0;
+            border-bottom: 1px solid #dee2e6;
+            background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
+            border-radius: 12px 12px 0 0;
+        }
+        .dashboard-tab {
+            position: relative;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background: transparent;
+            color: #6c757d;
+            padding: 10px 16px 12px;
+            margin-bottom: -1px;
+            border-radius: 10px 10px 0 0;
+            font: inherit;
+            font-size: 0.93em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+        }
+        .dashboard-tab:hover {
+            color: #32325d;
+            background: rgba(255, 255, 255, 0.85);
+        }
+        .dashboard-tab[aria-selected="true"] {
+            color: #32325d;
+            background: #fff;
+            border-color: #dee2e6;
+            border-bottom-color: #fff;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+        }
+        .dashboard-tabs .dashboard-toolbar {
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding: 18px 20px 20px;
+            border-radius: 0 0 12px 12px;
+            border-top: none;
+        }
+        .dashboard-tabpanel {
+            padding-top: 4px;
+        }
+        .dashboard-tabpanel[hidden] {
+            display: none !important;
+        }
+
+        /* Dezentes SharePoint-Grün (nur SharePoint-Register) */
+        .dashboard-grid--sharepoint .choice[data-tool-id] {
+            border-color: rgba(16, 124, 16, 0.22);
+            background: linear-gradient(165deg, rgba(16, 124, 16, 0.07) 0%, rgba(1, 120, 124, 0.04) 45%, #f7faf7 100%);
+        }
+        .dashboard-grid--sharepoint .choice[data-tool-id]:hover {
+            border-color: rgba(16, 124, 16, 0.38);
+            box-shadow: 0 10px 26px rgba(16, 124, 16, 0.1);
+            background: linear-gradient(165deg, rgba(16, 124, 16, 0.11) 0%, rgba(1, 120, 124, 0.06) 40%, #f4faf4 100%);
+        }
+        .dashboard-grid--sharepoint .choice[data-tool-id]:focus-within {
+            outline-color: rgba(16, 124, 16, 0.45);
+        }
+        .dashboard-grid--sharepoint .choice[data-tool-id].drag-over {
+            outline-color: rgba(16, 124, 16, 0.55);
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <header>
+    <div class="container page-card">
+        <div class="header">
             <h1>MS365-Schulverwaltung</h1>
             <div class="app-brand-logo">
                 <img src="assets/schooltool.png" width="320" height="88" alt="Logo MS365-Schulverwaltung" decoding="async" />
             </div>
             <p class="app-tagline">Microsoft 365 in der Schule – strukturiert planen, sicher umsetzen.</p>
-        </header>
-        <main>
-            <div class="grid" role="list" aria-label="Werkzeuge und Platzhalter">
-                <section class="choice featured" role="listitem" aria-label="Schul-Grundeinstellungen">
+            <div class="toolbar" aria-label="Menü">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="tenant.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-sliders2-vertical"></i>Schul‑Grundeinstellungen</a>
+                        <a class="btn" href="einrichtung.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-signpost-2"></i>Geführte Einrichtung</a>
+                        <a class="btn" href="ersteinrichtung.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-diagram-3"></i>Experten: Struktur</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="dashboard-featured">
+                <section class="choice featured" aria-label="Schul-Grundeinstellungen">
                     <div class="featured-split">
                         <div class="featured-main">
                             <h2><i class="bi bi-sliders2-vertical"></i>Schul‑Grundeinstellungen</h2>
-                            <p>Gemeinsame Basisdaten (lokal im Browser) für die Tools. Hier pflegst du Domain, Fächer, Lehrkräfte und optional Schüler.</p>
+                            <p>Zentrale Basisdaten (lokal im Browser): <strong>Stammdaten</strong> schulweit (Domain, Fächer, ARGE, Lehrkräfte, Verwaltung) und Daten <strong>pro Schuljahr</strong> (Schüler:innen, Klassen, Klassen‑Gruppen in M365). <strong>Klassen‑Anzeigenamen</strong> zum Schuljahreswechsel: Tab <a href="tenant.html#classes" style="color:inherit;text-decoration:underline;">Klassen</a> in den Einstellungen.</p>
                             <ul class="stats" aria-label="Schul-Statistiken">
                                 <li class="stat-pill"><strong id="tenantStatSubjects">–</strong> Fächer</li>
                                 <li class="stat-pill"><strong id="tenantStatTeachers">–</strong> Lehrer</li>
@@ -265,136 +449,329 @@
                                 <li class="stat-pill"><strong id="tenantStatClasses">–</strong> Klassen</li>
                             </ul>
                             <a class="btn alt" href="tenant.html"><i class="bi bi-gear"></i>Schul‑Einstellungen öffnen</a>
+                            <a class="btn" href="einrichtung.html" style="margin-left:10px;"><i class="bi bi-signpost-2"></i>Geführte Einrichtung</a>
+                            <a class="btn" href="ersteinrichtung.html" style="margin-left:10px;"><i class="bi bi-diagram-3"></i>Experten: Struktur</a>
                         </div>
-                        <aside class="dashboard-domain" aria-label="Schul-E-Mail-Domain">
-                            <label for="schoolEmailDomain">E-Mail-Domain der Schule (ohne @)</label>
-                            <input type="text" id="schoolEmailDomain" name="schoolEmailDomain" placeholder="ms365.schule" autocomplete="off" spellcheck="false">
-                            <p class="domain-hint">
-                                Gilt für Kursteams, Jahrgang und ARGE. Vollständige Stammdaten: <a href="tenant.html">Schul‑Einstellungen</a>.
-                            </p>
-                        </aside>
                     </div>
                 </section>
-                <section class="choice" role="listitem" aria-label="Schüler und Lehrer Gruppen" data-tool-id="slg" draggable="true">
-                    <h2><i class="bi bi-people"></i>Schüler‑ und Lehrer:innen‑Gruppen</h2>
+            </div>
+
+            <div class="dashboard-tabs" role="region" aria-label="Werkzeug-Katalog">
+                <div class="dashboard-tablist" role="tablist" aria-label="Register">
+                    <button type="button" class="dashboard-tab" role="tab" id="dash-tab-m365" aria-selected="true" aria-controls="dash-panel-m365" data-dashboard-tab="m365"><i class="bi bi-microsoft"></i> Microsoft 365</button>
+                    <button type="button" class="dashboard-tab" role="tab" id="dash-tab-sharepoint" aria-selected="false" aria-controls="dash-panel-sharepoint" data-dashboard-tab="sharepoint"><i class="bi bi-share"></i> SharePoint</button>
+                    <button type="button" class="dashboard-tab" role="tab" id="dash-tab-tools" aria-selected="false" aria-controls="dash-panel-tools" data-dashboard-tab="tools"><i class="bi bi-wrench-adjustable"></i> Weitere Tools</button>
+                </div>
+
+                <div class="dashboard-toolbar" role="region" aria-labelledby="dash-toolbar-search-label dashboard-cluster-label" id="dash-toolbar">
+                    <span class="dashboard-toolbar-section-title" id="dash-toolbar-search-label">Werkzeuge durchsuchen</span>
+                    <div class="dashboard-toolbar-row dashboard-toolbar-search-row">
+                        <label class="visually-hidden" for="dashboard-tool-search">Suchbegriff für Werkzeuge</label>
+                        <input type="search" id="dashboard-tool-search" class="dashboard-search-input" placeholder="Suchbegriff oder Werkzeugname …" autocomplete="off" spellcheck="false" />
+                        <span class="dashboard-search-kbd" title="Fokus Suchfeld"><kbd>Strg</kbd>+<kbd>K</kbd></span>
+                    </div>
+                    <span class="dashboard-chip-row-label" id="dashboard-cluster-label">Aufgabe</span>
+                    <div class="dashboard-chips" role="group" aria-labelledby="dashboard-cluster-label">
+                        <button type="button" class="dashboard-chip is-active" data-cluster-chip="all">Alle</button>
+                        <button type="button" class="dashboard-chip" data-cluster-chip="anlegen">Teams &amp; Gruppen anlegen</button>
+                        <button type="button" class="dashboard-chip" data-cluster-chip="wartung">Umbenennen &amp; Archiv</button>
+                        <button type="button" class="dashboard-chip" data-cluster-chip="einblick">Übersicht &amp; Abgleich</button>
+                        <button type="button" class="dashboard-chip" data-cluster-chip="exchange">Mail &amp; Richtlinien</button>
+                    </div>
+                </div>
+
+                <div class="dashboard-tabpanel" role="tabpanel" id="dash-panel-m365" aria-labelledby="dash-tab-m365">
+                    <div class="grid dashboard-grid--m365" id="grid-m365" role="list" aria-label="Microsoft-365-Werkzeuge">
+                <section class="choice" role="listitem" aria-label="Lehrerinnen und Schülerinnen" data-tool-id="slg" data-cluster="anlegen" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-people"></i>Lehrerinnen &amp; Schülerinnen</h2>
                     <p>Zwei Microsoft 365‑Gruppen (<code>schueler@…</code> / <code>lehrer@…</code>) aus den Schul‑Listen anlegen oder bestehende Gruppen mit Mitgliedern befüllen – schrittweise inkl. manueller Adressen.</p>
                     <a class="btn" href="tools/schueler-lehrer-gruppen.html"><i class="bi bi-people-fill"></i>Gruppen verwalten</a>
                 </section>
-                <section class="choice" role="listitem" data-tool-id="jahrgang" draggable="true">
+                <section class="choice" role="listitem" data-tool-id="jahrgang" data-cluster="anlegen" data-stack="m365" draggable="true">
                     <h2><i class="bi bi-diagram-3"></i>Jahrgangsgruppen</h2>
                     <p>Microsoft 365‑Gruppen (Unified Groups, keine Kursteams) nach Schema <code>jg&lt;Jahr&gt;-&lt;Kürzel&gt;</code> erstellen.</p>
                     <a class="btn" href="tools/jahrgang.html"><i class="bi bi-plus-circle"></i>Jahrgangsgruppen erstellen</a>
                 </section>
-                <section class="choice" role="listitem" data-tool-id="arge" draggable="true">
-                    <h2><i class="bi bi-people-gear"></i>ARGEs</h2>
-                    <p>Microsoft 365‑Gruppen für Arbeitsgemeinschaften (z. B. <code>ARGE Deutsch</code>, <code>ARGEBB</code>) erstellen – inkl. Besitzer und Doppelklick‑Paket.</p>
-                    <a class="btn" href="tools/arge.html"><i class="bi bi-magic"></i>ARGEs erstellen</a>
-                </section>
-                <section class="choice" role="listitem" data-tool-id="kursteams" draggable="true">
+                <section class="choice" role="listitem" data-tool-id="kursteams" data-cluster="anlegen" data-stack="m365" draggable="true">
                     <h2><i class="bi bi-mortarboard"></i>Kursteams</h2>
                     <p>Import der <strong>WebUntis‑Fächerliste</strong> (CSV/Excel), optional manuelle Zeilen. Teams (Vorlage <code>EDU_Class</code>) vorbereiten und online oder per PowerShell anlegen.</p>
                     <a class="btn" href="tools/kursteams.html"><i class="bi bi-rocket-takeoff"></i>Kursteams erstellen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Weitere Teams und Gruppen" data-tool-id="weitere-teams-gruppen" draggable="true">
+                <section class="choice" role="listitem" aria-label="Weitere Teams und Gruppen" data-tool-id="weitere-teams-gruppen" data-cluster="anlegen" data-stack="m365" draggable="true">
                     <h2><i class="bi bi-collection"></i>Weitere Teams &amp; Gruppen</h2>
                     <p>Beliebige zusätzliche Microsoft‑365‑Gruppen/Teams anlegen: Liste manuell oder per Import, dann Besitzer, Mitglieder und Einstellungen festlegen und online per Microsoft Graph ausführen.</p>
                     <a class="btn" href="tools/weitere-teams-gruppen.html"><i class="bi bi-box-arrow-up-right"></i>Tool öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Klassen umbenennen" data-tool-id="klassen-umbenennen" draggable="true">
-                    <h2><i class="bi bi-pencil-square"></i>Klassen umbenennen</h2>
-                    <p>Microsoft‑365‑Klassengruppen zum Schuljahreswechsel umbenennen (z. B. <code>Klasse 1A</code> → <code>Klasse 2A</code>) mit Vorschau und Microsoft Graph.</p>
-                    <a class="btn" href="tools/klassen-umbenennen.html"><i class="bi bi-arrow-repeat"></i>Klassen umbenennen</a>
+                <section class="choice" role="listitem" aria-label="Personen im Verzeichnis" data-tool-id="personen-verwaltung" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-person-lines-fill"></i>Personen‑Verwaltung</h2>
+                    <p>Benutzer:innen aus Entra laden, filtern, Stammdaten einsehen und Gruppenmitgliedschaften pro Person (Microsoft Graph).</p>
+                    <a class="btn" href="tools/personen-verwaltung.html"><i class="bi bi-people"></i>Personen öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Teams archivieren" data-tool-id="teams-archiv" draggable="true">
-                    <h2><i class="bi bi-archive"></i>Teams archivieren</h2>
-                    <p>Microsoft Teams per Graph archivieren oder wieder aktivieren (gleiche GUID wie die M365‑Gruppe). Optional SharePoint‑Website schreibgeschützt.</p>
-                    <a class="btn" href="tools/teams-archiv.html"><i class="bi bi-archive-fill"></i>Teams archivieren</a>
+                <section class="choice" role="listitem" aria-label="MS 365 Gruppenverwaltung" data-tool-id="schulstruktur-sync" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-diagram-2"></i>MS 365 Gruppenverwaltung</h2>
+                    <p>Übersicht und Pflege von Gruppen/Teams im Tenant: Owner/Mitglieder, Sichtbarkeit, Kursteams‑Indikator, Teams‑Archiv in den Details (jede M365‑Gruppe mit Team-Workload) und weitere Graph‑Aktionen.</p>
+                    <a class="btn" href="tools/schulstruktur-sync.html"><i class="bi bi-kanban"></i>Öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Microsoft 365-Gruppen anzeigen" data-tool-id="gruppen-uebersicht" draggable="true">
-                    <h2><i class="bi bi-list-ul"></i>MS365‑Gruppen</h2>
-                    <p>Einheitliche Microsoft‑365‑Gruppen im Mandanten listen: Besitzer, Mitglieder und Erstellungsdatum (Microsoft Graph).</p>
-                    <a class="btn" href="tools/gruppen-uebersicht.html"><i class="bi bi-search"></i>Gruppenübersicht öffnen</a>
+                <section class="choice" role="listitem" aria-label="Organisations-Assistent" data-tool-id="organisations-assistent" data-cluster="wartung" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-calendar2-range"></i>Organisations-Assistent</h2>
+                    <p>Schuljahreswechsel auf der SOLL‑Struktur (Schuljahr, Archiv, Unterbaum‑Duplikat), Kohorten planen (Matura/Eltern‑Jahrgang) und Fachschafts‑Gruppen aus der Fächerliste – lokal in <code>app-data-v2</code>, mit Verknüpfung zu Klassen‑Einstellungen und Kursteams.</p>
+                    <a class="btn" href="tools/organisations-assistent.html"><i class="bi bi-calendar2-check"></i>Assistent öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Schulstruktur-Sync" data-tool-id="schulstruktur-sync" draggable="true">
-                    <h2><i class="bi bi-diagram-2"></i>Schulstruktur‑Sync</h2>
-                    <p>Übersicht und Pflege von Jahrgängen, Klassen, Arbeitsgemeinschaften und Gruppen – als Basis für Microsoft‑365‑Provisioning und Sync (v1‑Mock).</p>
-                    <a class="btn" href="tools/schulstruktur-sync.html"><i class="bi bi-kanban"></i>Übersicht öffnen</a>
+                <section class="choice" role="listitem" aria-label="SOLL/IST Abgleichen" data-tool-id="abgleichen" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-intersect"></i>Abgleichen (SOLL ↔ Tenant)</h2>
+                    <p>SOLL‑Struktur mit vorhandenen Gruppen/Teams im Tenant abgleichen, manuell zuordnen und Abweichungen gezielt korrigieren.</p>
+                    <a class="btn" href="tools/abgleichen.html"><i class="bi bi-intersect"></i>Öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Gruppenerstellung einschränken" data-tool-id="gruppenerstellung" draggable="true">
+                <section class="choice" role="listitem" aria-label="Leere Gruppen Report" data-tool-id="leere-gruppen-report" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-ui-checks-grid"></i>Leere Gruppen (Report)</h2>
+                    <p>Gruppen/Teams mit Besitzer- und Mitgliederzahl aus Microsoft Graph (lesend). Keine Nutzungsmetriken – dafür Admin-Berichte nutzen.</p>
+                    <a class="btn" href="tools/leere-gruppen-report.html"><i class="bi bi-search"></i>Report öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="Gast-Zugänge und Externe" data-tool-id="gast-zugaenge" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-person-plus"></i>Gast-Zugänge &amp; Externe</h2>
+                    <p>Teams mit Gast-Mitgliedern und optional B2B-/Gast-Einladungen aus dem Verzeichnis-Audit einsehen (lesend, DSGVO-Hinweise in der Oberfläche).</p>
+                    <a class="btn" href="tools/gast-zugaenge.html"><i class="bi bi-shield-check"></i>Übersicht öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="Freigegebene Postfächer" data-tool-id="postfaecher" data-cluster="exchange" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-inbox"></i>Freigegebene Postfächer</h2>
+                    <p>Im Tenant einlesen und verwalten (v1: Einlesen + Details, heuristische Erkennung).</p>
+                    <a class="btn" href="tools/postfaecher.html"><i class="bi bi-search"></i>Freigegebene Postfächer öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="Verteilerlisten und mail-aktivierte Sicherheitsgruppen" data-tool-id="verteilerlisten" data-cluster="exchange" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-envelope-paper"></i>Verteilerlisten &amp; Sicherheitsgruppen</h2>
+                    <p>Klassische Verteilerlisten und mail‑aktivierte Sicherheitsgruppen einlesen (Microsoft Graph) und per generiertem Exchange‑Online‑PowerShell‑Skript anlegen, ändern, Mitglieder/Besitzer pflegen oder löschen.</p>
+                    <a class="btn" href="tools/verteilerlisten.html"><i class="bi bi-envelope-paper-fill"></i>Tool öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="Gruppenerstellung einschränken" data-tool-id="gruppenerstellung" data-cluster="exchange" data-stack="m365" draggable="true">
                     <h2><i class="bi bi-shield-lock"></i>Gruppenerstellung einschränken</h2>
                     <p>Entra‑Directory‑Einstellung <code>Group.Unified</code>: nur Mitglieder einer Sicherheitsgruppe dürfen M365‑Gruppen/Teams anlegen; Status prüfen oder Einschränkung aufheben.</p>
                     <a class="btn" href="tools/gruppenerstellung.html"><i class="bi bi-box-arrow-up-right"></i>Tool öffnen</a>
                 </section>
+                    </div>
+                </div>
+
+                <div class="dashboard-tabpanel" role="tabpanel" id="dash-panel-sharepoint" aria-labelledby="dash-tab-sharepoint" hidden>
+                    <div class="grid dashboard-grid--sharepoint" id="grid-sp" role="list" aria-label="SharePoint-Werkzeuge">
+                <section class="choice" role="listitem" aria-label="SharePoint Websiteerstellung" data-tool-id="sharepoint-mandant-website" data-cluster="einblick" data-stack="sharepoint" draggable="true">
+                    <h2><i class="bi bi-building-gear"></i>SharePoint – Websiteerstellung</h2>
+                    <p>Mandanten‑Einstellungen wie im Admin Center: Sites anlegen, Pfade, <strong>Standardzeitzone</strong>, Speicher für neue Sites – per Graph <code>admin/sharepoint/settings</code>.</p>
+                    <a class="btn" href="tools/sharepoint-mandant-website.html"><i class="bi bi-box-arrow-up-right"></i>Öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="SharePoint Mandanten Freigaben" data-tool-id="sharepoint-mandant-teilen" data-cluster="einblick" data-stack="sharepoint" draggable="true">
+                    <h2><i class="bi bi-share"></i>SharePoint – Mandanten‑Freigaben</h2>
+                    <p>Freigabe‑Stufe für SharePoint/OneDrive, Domain‑Listen und Gast‑Optionen über dieselbe Graph‑Admin‑API (was <code>sharepointSettings</code> hergibt).</p>
+                    <a class="btn" href="tools/sharepoint-mandant-teilen.html"><i class="bi bi-box-arrow-up-right"></i>Öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="SharePoint Intranet und Hub" data-tool-id="sharepoint-intranet-hub" data-cluster="anlegen" data-stack="sharepoint" draggable="true">
+                    <h2><i class="bi bi-house-door"></i>SharePoint – Intranet &amp; Hub</h2>
+                    <p><strong>Kommunikationssite</strong> (Intranet) per Graph (beta) anlegen und als <strong>Hub‑Website</strong> registrieren (REST, mit PowerShell‑Fallback).</p>
+                    <a class="btn" href="tools/sharepoint-intranet-hub.html"><i class="bi bi-box-arrow-up-right"></i>Öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="SharePoint Lehrerliste" data-tool-id="sharepoint-liste-lehrer" data-cluster="anlegen" data-stack="sharepoint" draggable="true">
+                    <h2><i class="bi bi-table"></i>SharePoint – Lehrerliste</h2>
+                    <p>Lehrkräfte aus den <strong>Schul-Grundeinstellungen</strong> als neue Liste auf einer gewählten Website anlegen und Zeilen schreiben – per Graph (<code>Sites.ReadWrite.All</code>).</p>
+                    <a class="btn" href="tools/sharepoint-liste-lehrer.html"><i class="bi bi-box-arrow-up-right"></i>Öffnen</a>
+                </section>
+                <section class="choice" role="listitem" aria-label="SharePoint Schultermine Liste" data-tool-id="sharepoint-liste-schultermine" data-cluster="anlegen" data-stack="sharepoint" draggable="true">
+                    <h2><i class="bi bi-calendar3"></i>SharePoint – Schultermine-Liste</h2>
+                    <p>Leere Liste mit Spalten für Termine (Beginn/Ende, Kategorie, Outlook-ID, …) – Befüllung und Sync z. B. per <strong>Power Automate</strong>.</p>
+                    <a class="btn" href="tools/sharepoint-liste-schultermine.html"><i class="bi bi-box-arrow-up-right"></i>Öffnen</a>
+                </section>
+                    </div>
+                </div>
+
+                <div class="dashboard-tabpanel" role="tabpanel" id="dash-panel-tools" aria-labelledby="dash-tab-tools" hidden>
+                    <div class="grid dashboard-grid--tools" id="grid-tools" role="list" aria-label="Weitere Werkzeuge">
+                        <section class="choice choice-placeholder" aria-label="Platzhalter">
+                            <h2><i class="bi bi-hourglass-split"></i>Weitere Werkzeuge</h2>
+                            <p>Hier können später zusätzliche Hilfen und Integrationen ergänzt werden – getrennt von den Microsoft‑365‑ und SharePoint‑Standardkacheln.</p>
+                            <span class="placeholder-badge">In Planung</span>
+                        </section>
+                    </div>
+                </div>
             </div>
-            <p class="dashboard-reorder-hint">Tipp: Die Werkzeug‑Kacheln können per <strong>Drag &amp; Drop</strong> umsortiert werden (wird lokal im Browser gespeichert).</p>
+            <p class="dashboard-reorder-hint" id="dashboard-reorder-hint">Tipp: Mit dem <strong>Stern</strong> wichtige Werkzeuge nach oben pinnen. Per <strong>Drag &amp; Drop</strong> sortieren (ohne aktive Suche/Filter). <strong>Strg+K</strong> fokussiert die Suche.</p>
             <p class="note">Ein Projekt von Kurt Söser</p>
-        </main>
+        </div>
     </div>
 
     <p class="header-help-row"><a href="hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
 
     <script src="ms365-config.js"></script>
+    <script type="module" src="src/shared/msal-auth-ui.js"></script>
     <script src="src/shared/school-domain.js" defer></script>
+    <script src="src/shared/app-data-v2.js" defer></script>
     <script src="src/shared/tenant-settings-core.js" defer></script>
     <script src="src/shared/tenant-settings-ui.js" defer></script>
     <script>
         (function () {
             'use strict';
+            const FAVORITES_KEY = 'ms365-dashboard-favorites-v1';
+            const TAB_KEY = 'ms365-dashboard-tab-v1';
+            const ORDER_KEY_M365 = 'ms365-dashboard-order-m365-v1';
+            const ORDER_KEY_SP = 'ms365-dashboard-order-sharepoint-v1';
+            const ORDER_KEY_TOOLS = 'ms365-dashboard-order-tools-v1';
+            const LEGACY_ORDER_KEY = 'ms365-dashboard-order-v1';
 
-            function syncTenantSettingsFromDashboardDomain() {
-                if (typeof window.ms365TenantSettingsLoad !== 'function' || typeof window.ms365TenantSettingsSave !== 'function') {
-                    return;
-                }
-                window.ms365TenantSettingsSave(window.ms365TenantSettingsLoad());
-            }
-
-            const domainInp = document.getElementById('schoolEmailDomain');
-            if (domainInp) {
-                let domainSaveTimer;
-                domainInp.addEventListener('change', syncTenantSettingsFromDashboardDomain);
-                domainInp.addEventListener('blur', syncTenantSettingsFromDashboardDomain);
-                domainInp.addEventListener('input', () => {
-                    clearTimeout(domainSaveTimer);
-                    domainSaveTimer = setTimeout(syncTenantSettingsFromDashboardDomain, 450);
-                });
-            }
-
-            function runAfterDeferredApis() {
-                if (typeof window.ms365TenantSettingsSave !== 'function') return;
-                syncTenantSettingsFromDashboardDomain();
-            }
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => setTimeout(runAfterDeferredApis, 0));
-            } else {
-                setTimeout(runAfterDeferredApis, 0);
-            }
-        })();
-
-        (function () {
-            'use strict';
-            const ORDER_KEY = 'ms365-dashboard-order-v1';
-            const DEFAULT_ORDER = [
+            const DEFAULT_ORDER_M365 = [
                 'slg',
                 'jahrgang',
-                'arge',
                 'kursteams',
                 'weitere-teams-gruppen',
-                'klassen-umbenennen',
-                'teams-archiv',
-                'gruppen-uebersicht',
+                'personen-verwaltung',
                 'schulstruktur-sync',
+                'organisations-assistent',
+                'abgleichen',
+                'leere-gruppen-report',
+                'gast-zugaenge',
+                'postfaecher',
+                'verteilerlisten',
                 'gruppenerstellung'
             ];
+            const DEFAULT_ORDER_SP = [
+                'sharepoint-mandant-website',
+                'sharepoint-mandant-teilen',
+                'sharepoint-intranet-hub',
+                'sharepoint-liste-lehrer',
+                'sharepoint-liste-schultermine'
+            ];
+            const DEFAULT_ORDER_TOOLS = [];
 
-            const grid = document.querySelector('.grid');
-            if (!grid) return;
+            const M365_ID_SET = new Set(DEFAULT_ORDER_M365);
+            const SP_ID_SET = new Set(DEFAULT_ORDER_SP);
 
-            function getToolCards() {
-                return Array.from(grid.querySelectorAll('.choice[data-tool-id]'));
+            const gridM365 = document.getElementById('grid-m365');
+            const gridSp = document.getElementById('grid-sp');
+            const gridTools = document.getElementById('grid-tools');
+            const searchInput = document.getElementById('dashboard-tool-search');
+            const reorderHint = document.getElementById('dashboard-reorder-hint');
+            if (!gridM365 || !gridSp) return;
+
+            let activeCluster = 'all';
+
+            function gridForTab(tab) {
+                if (tab === 'm365') return gridM365;
+                if (tab === 'sharepoint') return gridSp;
+                return gridTools;
             }
 
-            function applyOrder(order) {
-                const cards = getToolCards();
+            function orderKeyForTab(tab) {
+                if (tab === 'm365') return ORDER_KEY_M365;
+                if (tab === 'sharepoint') return ORDER_KEY_SP;
+                return ORDER_KEY_TOOLS;
+            }
+
+            function getTabForCard(el) {
+                if (!el) return 'm365';
+                if (gridM365 && gridM365.contains(el)) return 'm365';
+                if (gridSp && gridSp.contains(el)) return 'sharepoint';
+                return 'tools';
+            }
+
+            function getAllToolCards() {
+                const out = [];
+                [gridM365, gridSp, gridTools].forEach(function (g) {
+                    if (!g) return;
+                    g.querySelectorAll('.choice[data-tool-id]').forEach(function (c) {
+                        out.push(c);
+                    });
+                });
+                return out;
+            }
+
+            function loadOrder(key) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    const o = JSON.parse(raw);
+                    return Array.isArray(o) ? o.map((x) => String(x)) : null;
+                } catch {
+                    return null;
+                }
+            }
+
+            function migrateLegacyOrderOnce() {
+                if (loadOrder(ORDER_KEY_M365) || loadOrder(ORDER_KEY_SP)) return;
+                const raw = localStorage.getItem(LEGACY_ORDER_KEY);
+                if (!raw) return;
+                let arr;
+                try {
+                    arr = JSON.parse(raw);
+                } catch {
+                    return;
+                }
+                if (!Array.isArray(arr)) return;
+                const m = arr.filter(function (id) {
+                    return M365_ID_SET.has(id);
+                });
+                const s = arr.filter(function (id) {
+                    return SP_ID_SET.has(id);
+                });
+                try {
+                    if (m.length) localStorage.setItem(ORDER_KEY_M365, JSON.stringify(m));
+                    if (s.length) localStorage.setItem(ORDER_KEY_SP, JSON.stringify(s));
+                } catch {
+                    /* ignore */
+                }
+            }
+
+            function loadFavorites() {
+                try {
+                    const raw = localStorage.getItem(FAVORITES_KEY);
+                    if (!raw) return [];
+                    const o = JSON.parse(raw);
+                    return Array.isArray(o) ? o.map((x) => String(x)) : [];
+                } catch {
+                    return [];
+                }
+            }
+
+            function saveFavoritesOrder(favOrder) {
+                try {
+                    localStorage.setItem(FAVORITES_KEY, JSON.stringify(favOrder));
+                } catch {
+                    /* ignore */
+                }
+            }
+
+            function mergeDisplayOrderForTab(tab) {
+                const grid = gridForTab(tab);
+                const defaultOrder =
+                    tab === 'm365' ? DEFAULT_ORDER_M365 : tab === 'sharepoint' ? DEFAULT_ORDER_SP : DEFAULT_ORDER_TOOLS;
+                const saved = loadOrder(orderKeyForTab(tab));
+                const full = saved && saved.length ? saved : [...defaultOrder];
+                const favOrder = loadFavorites();
+                const favSet = new Set(favOrder);
+                const cards = Array.from(grid.querySelectorAll('.choice[data-tool-id]'));
+                const byId = new Map(cards.map((c) => [c.getAttribute('data-tool-id'), c]));
+                const merged = [];
+                const used = new Set();
+
+                favOrder.forEach(function (id) {
+                    if (byId.has(id) && !used.has(id)) {
+                        merged.push(id);
+                        used.add(id);
+                    }
+                });
+                full.forEach(function (id) {
+                    if (byId.has(id) && !favSet.has(id) && !used.has(id)) {
+                        merged.push(id);
+                        used.add(id);
+                    }
+                });
+                cards.forEach(function (el) {
+                    const id = el.getAttribute('data-tool-id');
+                    if (id && !used.has(id)) {
+                        merged.push(id);
+                        used.add(id);
+                    }
+                });
+                return merged;
+            }
+
+            function applyOrderForTab(tab, order) {
+                const grid = gridForTab(tab);
+                const cards = Array.from(grid.querySelectorAll('.choice[data-tool-id]'));
                 const byId = new Map(cards.map((c) => [c.getAttribute('data-tool-id'), c]));
                 const used = new Set();
 
@@ -411,36 +788,135 @@
                 });
             }
 
-            function loadOrder() {
-                try {
-                    const raw = localStorage.getItem(ORDER_KEY);
-                    if (!raw) return null;
-                    const o = JSON.parse(raw);
-                    return Array.isArray(o) ? o.map((x) => String(x)) : null;
-                } catch {
-                    return null;
-                }
+            function applyAllOrders() {
+                applyOrderForTab('m365', mergeDisplayOrderForTab('m365'));
+                applyOrderForTab('sharepoint', mergeDisplayOrderForTab('sharepoint'));
+                applyOrderForTab('tools', mergeDisplayOrderForTab('tools'));
             }
 
-            function saveOrder() {
-                const order = getToolCards().map((c) => c.getAttribute('data-tool-id')).filter(Boolean);
+            function favoriteOrderFollowingGrids() {
+                const favSet = new Set(loadFavorites());
+                const combined = [];
+                ['m365', 'sharepoint', 'tools'].forEach(function (t) {
+                    const g = gridForTab(t);
+                    if (!g) return;
+                    Array.from(g.querySelectorAll('.choice[data-tool-id]')).forEach(function (c) {
+                        const id = c.getAttribute('data-tool-id');
+                        if (id) combined.push(id);
+                    });
+                });
+                const out = [];
+                combined.forEach(function (id) {
+                    if (favSet.has(id)) out.push(id);
+                });
+                return out;
+            }
+
+            function saveOrderForTab(tab) {
+                const grid = gridForTab(tab);
+                if (!grid) return;
+                const domOrder = Array.from(grid.querySelectorAll('.choice[data-tool-id]'))
+                    .map((c) => c.getAttribute('data-tool-id'))
+                    .filter(Boolean);
                 try {
-                    localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+                    localStorage.setItem(orderKeyForTab(tab), JSON.stringify(domOrder));
                 } catch {
                     /* ignore */
                 }
+                saveFavoritesOrder(favoriteOrderFollowingGrids());
+            }
+
+            function isFilterActive() {
+                const q = (searchInput && searchInput.value) || '';
+                return String(q).trim().length > 0 || activeCluster !== 'all';
+            }
+
+            function panelVisible(card) {
+                const panel = card.closest('[role="tabpanel"]');
+                return panel && !panel.hidden;
+            }
+
+            function applySearchAndChips() {
+                const q = searchInput ? String(searchInput.value).trim().toLowerCase() : '';
+                getAllToolCards().forEach(function (card) {
+                    const cluster = card.getAttribute('data-cluster') || '';
+                    const matchCluster =
+                        activeCluster === 'all' || !cluster || cluster === activeCluster;
+                    const text = (card.textContent || '').toLowerCase().replace(/\s+/g, ' ');
+                    const matchQ = !q || text.indexOf(q) !== -1;
+                    card.hidden = !(matchCluster && matchQ);
+                });
+                getAllToolCards().forEach(function (card) {
+                    card.draggable = !isFilterActive() && panelVisible(card);
+                });
+                if (reorderHint) {
+                    reorderHint.style.display = isFilterActive() ? 'none' : '';
+                }
+            }
+
+            function setFavorite(id, on) {
+                let fav = loadFavorites();
+                const set = new Set(fav);
+                if (on) {
+                    if (!set.has(id)) fav.push(id);
+                } else {
+                    fav = fav.filter(function (x) {
+                        return x !== id;
+                    });
+                }
+                saveFavoritesOrder(fav);
+                applyAllOrders();
+                syncFavoriteButtons();
+            }
+
+            function syncFavoriteButtons() {
+                const favSet = new Set(loadFavorites());
+                getAllToolCards().forEach(function (card) {
+                    const id = card.getAttribute('data-tool-id');
+                    const btn = card.querySelector('.dashboard-fav-btn');
+                    if (!btn || !id) return;
+                    const isOn = favSet.has(id);
+                    btn.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+                    btn.setAttribute('aria-label', isOn ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen');
+                    btn.innerHTML = isOn
+                        ? '<i class="bi bi-star-fill" aria-hidden="true"></i>'
+                        : '<i class="bi bi-star" aria-hidden="true"></i>';
+                });
+            }
+
+            function injectFavoriteButtons() {
+                getAllToolCards().forEach(function (card) {
+                    if (card.querySelector('.dashboard-fav-btn')) return;
+                    const id = card.getAttribute('data-tool-id');
+                    if (!id) return;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'dashboard-fav-btn';
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const pressed = btn.getAttribute('aria-pressed') === 'true';
+                        setFavorite(id, !pressed);
+                    });
+                    card.insertBefore(btn, card.firstChild);
+                });
+                syncFavoriteButtons();
             }
 
             function clearDragClasses() {
-                getToolCards().forEach(function (c) {
+                getAllToolCards().forEach(function (c) {
                     c.classList.remove('dragging');
                     c.classList.remove('drag-over');
                 });
             }
 
             function enableDnD() {
-                getToolCards().forEach(function (card) {
+                getAllToolCards().forEach(function (card) {
                     card.addEventListener('dragstart', function (e) {
+                        if (!card.draggable) {
+                            e.preventDefault();
+                            return;
+                        }
                         const id = card.getAttribute('data-tool-id');
                         if (!id) return;
                         card.classList.add('dragging');
@@ -454,12 +930,13 @@
 
                     card.addEventListener('dragend', function () {
                         clearDragClasses();
-                        saveOrder();
+                        if (!isFilterActive()) saveOrderForTab(getTabForCard(card));
                     });
 
                     card.addEventListener('dragover', function (e) {
                         e.preventDefault();
-                        const dragging = grid.querySelector('.choice[data-tool-id].dragging');
+                        const gridEl = card.parentElement;
+                        const dragging = gridEl ? gridEl.querySelector('.choice[data-tool-id].dragging') : null;
                         if (!dragging || dragging === card) return;
                         card.classList.add('drag-over');
                         try {
@@ -475,18 +952,96 @@
 
                     card.addEventListener('drop', function (e) {
                         e.preventDefault();
-                        const dragging = grid.querySelector('.choice[data-tool-id].dragging');
-                        if (!dragging || dragging === card) return;
+                        const gridEl = card.parentElement;
+                        const dragging = gridEl ? gridEl.querySelector('.choice[data-tool-id].dragging') : null;
+                        if (!dragging || dragging === card || dragging.parentElement !== gridEl) return;
                         card.classList.remove('drag-over');
-                        grid.insertBefore(dragging, card);
-                        saveOrder();
+                        gridEl.insertBefore(dragging, card);
+                        if (!isFilterActive()) saveOrderForTab(getTabForCard(card));
                     });
                 });
             }
 
-            const saved = loadOrder();
-            applyOrder(saved && saved.length ? saved : DEFAULT_ORDER);
+            function setActiveTab(tab) {
+                try {
+                    localStorage.setItem(TAB_KEY, tab);
+                } catch {
+                    /* ignore */
+                }
+
+                document.querySelectorAll('[data-dashboard-tab]').forEach(function (btn) {
+                    const t = btn.getAttribute('data-dashboard-tab') || '';
+                    const on = t === tab;
+                    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+                    btn.tabIndex = on ? 0 : -1;
+                });
+
+                const panels = {
+                    m365: document.getElementById('dash-panel-m365'),
+                    sharepoint: document.getElementById('dash-panel-sharepoint'),
+                    tools: document.getElementById('dash-panel-tools')
+                };
+                Object.keys(panels).forEach(function (k) {
+                    const p = panels[k];
+                    if (!p) return;
+                    if (k === tab) {
+                        p.removeAttribute('hidden');
+                    } else {
+                        p.setAttribute('hidden', 'hidden');
+                    }
+                });
+
+                applySearchAndChips();
+            }
+
+            document.querySelectorAll('[data-dashboard-tab]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const t = btn.getAttribute('data-dashboard-tab') || 'm365';
+                    setActiveTab(t);
+                });
+            });
+
+            document.querySelectorAll('[data-cluster-chip]').forEach(function (chipBtn) {
+                chipBtn.addEventListener('click', function () {
+                    document.querySelectorAll('[data-cluster-chip]').forEach(function (b) {
+                        b.classList.toggle('is-active', b === chipBtn);
+                    });
+                    activeCluster = chipBtn.getAttribute('data-cluster-chip') || 'all';
+                    applySearchAndChips();
+                });
+            });
+
+            if (searchInput) {
+                searchInput.addEventListener('input', applySearchAndChips);
+            }
+
+            document.addEventListener('keydown', function (e) {
+                if (!searchInput) return;
+                if (e.defaultPrevented) return;
+                if (e.ctrlKey && (e.key === 'k' || e.key === 'K')) {
+                    const t = e.target;
+                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            });
+
+            migrateLegacyOrderOnce();
+
+            let initialTab = 'm365';
+            try {
+                const s = localStorage.getItem(TAB_KEY);
+                if (s === 'm365' || s === 'sharepoint' || s === 'tools') initialTab = s;
+            } catch {
+                /* ignore */
+            }
+            setActiveTab(initialTab);
+
+            applyAllOrders();
+            injectFavoriteButtons();
             enableDnD();
+            applySearchAndChips();
         })();
 
         (function () {

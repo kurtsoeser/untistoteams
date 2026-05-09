@@ -8,8 +8,67 @@
     <title>MS365-Schulverwaltung</title>
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <script src="ms365-config.js"></script>
     <script>
-      (function () {
+      (async function () {
+        // Wichtig: Diese Seite ist die Redirect-URI. Bevor wir weiterleiten,
+        // muss MSAL die Redirect-Antwort verarbeiten (handleRedirectPromise),
+        // sonst „verliert“ die App die Anmeldung und startet erneut.
+
+        function resolveClientId() {
+          let cfg = window.MS365_MSAL_CONFIG || {};
+          let id = String(cfg.clientId || '').trim();
+          if (!id) {
+            const meta = document.querySelector('meta[name="ms365-graph-client-id"]');
+            const fromMeta = meta && meta.getAttribute('content') ? meta.getAttribute('content').trim() : '';
+            if (fromMeta) id = fromMeta;
+          }
+          return id;
+        }
+
+        async function tryHandleMsalRedirect() {
+          const clientId = resolveClientId();
+          if (!clientId) return;
+          try {
+            let msalMod;
+            try {
+              msalMod = await import('https://esm.sh/@azure/msal-browser@3.26.1');
+            } catch {
+              msalMod = await import('https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.26.1/+esm');
+            }
+            const PublicClientApplication =
+              msalMod.PublicClientApplication || (msalMod.default && msalMod.default.PublicClientApplication);
+            if (!PublicClientApplication) return;
+            const cfg = window.MS365_MSAL_CONFIG || {};
+            const pca = new PublicClientApplication({
+              auth: {
+                clientId: clientId,
+                authority: cfg.authority || 'https://login.microsoftonline.com/organizations',
+                redirectUri: window.location.href.split('#')[0]
+              },
+              cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: true }
+            });
+            await pca.initialize();
+            await pca.handleRedirectPromise();
+          } catch {
+            // Wenn MSAL hier scheitert, versuchen wir trotzdem die Navigation.
+          }
+        }
+
+        await tryHandleMsalRedirect();
+
+        // Nach MSAL Redirect wieder zur ursprünglich gewünschten Tool-Seite zurück.
+        try {
+          const back = sessionStorage.getItem('ms365-post-login-url');
+          if (back && typeof back === 'string' && back.trim()) {
+            sessionStorage.removeItem('ms365-post-login-url');
+            window.location.replace(back);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+
         const params = new URLSearchParams(window.location.search);
         const mode = String(params.get('mode') || '').toLowerCase().trim();
 
@@ -18,23 +77,52 @@
           kursteam: 'tools/kursteams.html',
           webuntis: 'tools/kursteams.html',
           jahrgang: 'tools/jahrgang.html',
-          arge: 'tools/arge.html',
+          arge: 'tools/archiv/arge.html',
           schulstruktur: 'tools/schulstruktur-sync.html',
           schulstrukturync: 'tools/schulstruktur-sync.html',
-          schulstrukturSync: 'tools/schulstruktur-sync.html',
+          schulstruktursync: 'tools/schulstruktur-sync.html',
           schulstrukturtool: 'tools/schulstruktur-sync.html',
           'schulstruktur-sync': 'tools/schulstruktur-sync.html',
           gruppenerstellung: 'tools/gruppenerstellung.html',
           grouppolicy: 'tools/gruppenerstellung.html',
-          gruppen: 'tools/gruppen-uebersicht.html',
-          gruppenuebersicht: 'tools/gruppen-uebersicht.html',
-          'gruppen-uebersicht': 'tools/gruppen-uebersicht.html',
-          klassen: 'tools/klassen-umbenennen.html',
-          klassenumbenennen: 'tools/klassen-umbenennen.html',
-          'klassen-umbenennen': 'tools/klassen-umbenennen.html',
+          gruppen: 'tools/schulstruktur-sync.html',
+          gruppenuebersicht: 'tools/schulstruktur-sync.html',
+          'gruppen-uebersicht': 'tools/schulstruktur-sync.html',
+          personen: 'tools/personen-verwaltung.html',
+          personenverwaltung: 'tools/personen-verwaltung.html',
+          'personen-verwaltung': 'tools/personen-verwaltung.html',
+          klassen: 'tenant.html#classes',
+          klassenumbenennen: 'tenant.html#classes',
+          'klassen-umbenennen': 'tenant.html#classes',
           'schueler-lehrer-gruppen': 'tools/schueler-lehrer-gruppen.html',
           schuelerlehrer: 'tools/schueler-lehrer-gruppen.html',
-          slg: 'tools/schueler-lehrer-gruppen.html'
+          slg: 'tools/schueler-lehrer-gruppen.html',
+          teamsarchiv: 'tools/archiv/teams-archiv.html',
+          'teams-archiv': 'tools/archiv/teams-archiv.html',
+          leeregruppen: 'tools/leere-gruppen-report.html',
+          'leere-gruppen': 'tools/leere-gruppen-report.html',
+          leeregruppenreport: 'tools/leere-gruppen-report.html',
+          gast: 'tools/gast-zugaenge.html',
+          gastzugaenge: 'tools/gast-zugaenge.html',
+          'gast-zugaenge': 'tools/gast-zugaenge.html',
+          externe: 'tools/gast-zugaenge.html',
+          organisation: 'tools/organisations-assistent.html',
+          organisationsassistent: 'tools/organisations-assistent.html',
+          'organisations-assistent': 'tools/organisations-assistent.html',
+          schuljahr: 'tools/organisations-assistent.html',
+          schuljahreswechsel: 'tools/organisations-assistent.html',
+          sharepoint: 'tools/sharepoint-mandant-website.html',
+          'sharepoint-website': 'tools/sharepoint-mandant-website.html',
+          'sharepoint-teilen': 'tools/sharepoint-mandant-teilen.html',
+          'sharepoint-intranet': 'tools/sharepoint-intranet-hub.html',
+          intranet: 'tools/sharepoint-intranet-hub.html',
+          hub: 'tools/sharepoint-intranet-hub.html',
+          lehrerliste: 'tools/sharepoint-liste-lehrer.html',
+          'sharepoint-lehrer': 'tools/sharepoint-liste-lehrer.html',
+          'sharepoint-liste-lehrer': 'tools/sharepoint-liste-lehrer.html',
+          schultermine: 'tools/sharepoint-liste-schultermine.html',
+          'sharepoint-schultermine': 'tools/sharepoint-liste-schultermine.html',
+          'sharepoint-liste-schultermine': 'tools/sharepoint-liste-schultermine.html'
         };
 
         window.location.replace(map[mode] || 'index.html');
@@ -45,7 +133,7 @@
     </noscript>
   </head>
   <body>
-    <div class="container" style="max-width: 1100px">
+    <div class="container page-card">
       <div class="header">
         <h1>MS365-Schulverwaltung</h1>
         <p>Weiterleitung…</p>
@@ -55,10 +143,10 @@
         <p style="color: var(--muted); line-height: 1.5">
           Falls die Weiterleitung nicht funktioniert, öffnen Sie:
           <a href="index.html">Dashboard</a>, <a href="tools/kursteams.html">Kursteams</a>,
-          <a href="tools/jahrgang.html">Jahrgangsgruppen</a>, <a href="tools/arge.html">ARGEs</a>,
+          <a href="tools/jahrgang.html">Jahrgangsgruppen</a>, <a href="tools/archiv/arge.html">ARGEs (Archiv)</a>,
           <a href="tools/gruppenerstellung.html">Gruppenerstellung</a>,
-          <a href="tools/gruppen-uebersicht.html">Gruppenübersicht</a>,
-          <a href="tools/klassen-umbenennen.html">Klassen umbenennen</a>,
+          <a href="tools/schulstruktur-sync.html">MS&nbsp;365 Gruppenverwaltung</a>,
+          <a href="tenant.html#classes">Klassen‑Anzeigenamen (Einstellungen)</a>,
           <a href="tools/schueler-lehrer-gruppen.html">Schüler–Lehrer‑Gruppen</a>.
         </p>
       </div>

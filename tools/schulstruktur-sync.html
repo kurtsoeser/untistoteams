@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MS365-Schulverwaltung – Schulstruktur‑Sync</title>
+    <title>MS365-Schulverwaltung – MS 365 Gruppenverwaltung</title>
     <link rel="stylesheet" href="../app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         .page-card { max-width: 1400px; margin: 0 auto; }
         .layout {
             display: grid;
-            /* 2/3 links (Struktur), 1/3 rechts (Details) */
-            grid-template-columns: 2fr 1fr;
+            /* 1/2 links (Liste), 1/2 rechts (Details) */
+            grid-template-columns: 1fr 1fr;
             gap: 16px;
             align-items: start;
             padding-bottom: 28px;
@@ -70,8 +70,18 @@
             gap: 10px;
             align-items: baseline;
         }
+        .tree button.ss-tree-add-btn {
+            width: 38px;
+            min-width: 38px;
+            max-width: 38px;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
         .tree button:hover { background: rgba(94,114,228,0.06); }
         .tree button[aria-current="true"] { background: rgba(94,114,228,0.10); }
+        .tree button.is-multi-selected { background: rgba(45, 206, 137, 0.10); }
+        .tree button.is-multi-selected:hover { background: rgba(45, 206, 137, 0.14); }
         .pill {
             display: inline-flex;
             align-items: center;
@@ -88,6 +98,82 @@
         .pill.ok { border-color: rgba(13,128,80,0.18); background: rgba(13,128,80,0.08); color: #0d8050; }
         .pill.warn { border-color: rgba(133,100,4,0.22); background: rgba(255,193,7,0.12); color: #856404; }
         .pill.err { border-color: rgba(176,0,32,0.22); background: rgba(176,0,32,0.07); color: #b00020; }
+
+        /* Struktur: Anlegen-/Bearbeiten-Dialoge (wie Tenant-Embed) */
+        .ss-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 9999;
+        }
+        .ss-modal-backdrop.active { display: flex; }
+        .ss-modal {
+            width: min(760px, 96vw);
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid rgba(94, 114, 228, 0.22);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+            overflow: hidden;
+        }
+        .ss-modal-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .ss-modal-head h3 { margin: 0; color: #32325d; font-size: 1.05em; font-weight: 1000; }
+        .ss-modal-body { padding: 14px 16px; }
+        .ss-modal-close {
+            border: 1px solid rgba(94,114,228,0.22);
+            background: #fff;
+            border-radius: 12px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-weight: 900;
+            color: #32325d;
+        }
+        /* Details-Popup (Organigramm): "schöne" Tabs */
+        .ss-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0 0 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ss-tab-btn {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.18);
+            border-bottom: 0;
+            background: linear-gradient(180deg, rgba(94,114,228,0.06) 0%, rgba(255,255,255,0.92) 100%);
+            color: #32325d;
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+            padding: 10px 12px;
+            font-weight: 1000;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(50, 50, 93, 0.08);
+            font: inherit;
+        }
+        .ss-tab-btn.active,
+        .ss-tab-btn[aria-selected="true"] {
+            background: #fff;
+            border-color: rgba(94, 114, 228, 0.30);
+            box-shadow: 0 12px 22px rgba(94, 114, 228, 0.16);
+            transform: translateY(1px);
+        }
+        .ss-tab-btn:focus-visible {
+            outline: 3px solid rgba(94,114,228,0.35);
+            outline-offset: 2px;
+        }
 
         .stats {
             display: flex;
@@ -125,6 +211,12 @@
             font: inherit;
             box-sizing: border-box;
         }
+        .ss-modal .field input,
+        .ss-modal .field select,
+        .ss-modal .field textarea {
+            border-color: rgba(94, 114, 228, 0.22);
+            box-shadow: 0 6px 16px rgba(50, 50, 93, 0.06);
+        }
         .field textarea { min-height: 96px; resize: vertical; font-family: Consolas, 'Segoe UI', monospace; font-size: 0.92em; }
         .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
         .detail-actions .btn { margin: 0; }
@@ -137,17 +229,157 @@
             color: #495057;
             line-height: 1.45;
         }
+
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin: 12px 0 16px;
+        }
+        .mode-tabs .tabs {
+            margin: 0;
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid rgba(94, 114, 228, 0.22);
+            background: rgba(255,255,255,0.86);
+            box-shadow: 0 10px 24px rgba(50, 50, 93, 0.10);
+        }
+        .mode-tabs .tab-btn {
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-weight: 900;
+        }
+        .mode-tabs .tab-btn[aria-selected="true"] {
+            box-shadow: 0 12px 26px rgba(94, 114, 228, 0.26);
+        }
+        .mode-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .live-banner {
+            display: none;
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(94,114,228,0.22);
+            background: linear-gradient(135deg, rgba(94,114,228,0.12) 0%, rgba(45,206,137,0.10) 100%);
+            color: #32325d;
+            line-height: 1.45;
+            box-shadow: 0 10px 26px rgba(50,50,93,0.10);
+        }
+        .live-banner strong { font-weight: 1000; }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(45,206,137,0.15);
+            border: 1px solid rgba(45,206,137,0.28);
+            color: #0d8050;
+            font-weight: 1000;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        /* Detail-Tabs als Registerkarten + sticky */
+        .detail-tabs-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            padding-top: 6px;
+            margin-top: 10px;
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 10px 22px rgba(50, 50, 93, 0.06);
+        }
+        .detail-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-tab-btn {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.18);
+            border-bottom: 0;
+            background: linear-gradient(180deg, rgba(94,114,228,0.06) 0%, rgba(255,255,255,0.92) 100%);
+            color: #32325d;
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+            padding: 10px 12px;
+            font-weight: 1000;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(50, 50, 93, 0.08);
+        }
+        .detail-tab-btn[aria-selected="true"] {
+            background: #fff;
+            border-color: rgba(94, 114, 228, 0.30);
+            box-shadow: 0 12px 22px rgba(94, 114, 228, 0.16);
+            transform: translateY(1px);
+        }
+        .detail-tab-btn:focus-visible {
+            outline: 2px solid rgba(94, 114, 228, 0.55);
+            outline-offset: 3px;
+        }
+
+        /* Tab Panels: wirklich zuordnen/ausblenden */
+        .tab-panel { display: none; margin-top: 12px; }
+        .tab-panel.active { display: block; }
+
+        /* Baum ↔ Organigramm (SOLL) */
+        #ssStructureViewTabsBar { margin-top: 10px; padding-top: 4px; }
+        #ssGraphFullscreenContainer { position: relative; }
+        #ssGraphWrap {
+            position: relative;
+            min-height: 380px;
+            max-height: min(70vh, 720px);
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: linear-gradient(180deg, #f8f9fc 0%, #fff 42%);
+            margin-top: 8px;
+        }
+        #ssGraphWrap svg#ssGraphEdges {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: visible;
+        }
+        #ssGraphNodes { position: relative; z-index: 2; }
+        .ss-graph-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .ss-graph-layout-btn.ss-graph-layout-btn--active {
+            border-color: rgba(94, 114, 228, 0.45);
+            box-shadow: 0 8px 18px rgba(94, 114, 228, 0.2);
+        }
+
+        .bulk-disabled { opacity: 0.55; pointer-events: none; filter: grayscale(0.15); }
     </style>
 </head>
-<body data-ms365-skip-tenant-domain-prompt="true">
+<body data-ms365-skip-tenant-domain-prompt="true" data-ss-default-mode="tenant">
     <div class="container page-card">
         <div class="header">
             <h1>MS365-Schulverwaltung</h1>
             <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
                 <span class="header-tool-indicator__label">Werkzeug:</span>
-                <span class="header-tool-indicator__name">Schulstruktur‑Sync</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-diagram-2"></i>MS 365 Gruppenverwaltung</span>
             </div>
-            <p>Optische Übersicht &amp; Bearbeitung von Jahrgängen, Klassen, Arbeitsgemeinschaften und Gruppen. (Mock v1 – SharePoint‑Backend folgt.)</p>
+            <p>Gruppen/Teams im Tenant einlesen und verwalten: Anzeigename/Beschreibung, Owner/Mitglieder, Sichtbarkeit und Kursteam‑Indikator (Microsoft Graph).</p>
             <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
                 <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
@@ -164,39 +396,69 @@
         </div>
 
         <div class="content">
+            <div class="mode-tabs" aria-label="Aktionen">
+                <div class="mode-actions">
+                    <button type="button" class="btn btn-success small-btn" id="ssBtnTenantLoadTop" style="display:none;">
+                        <i class="bi bi-cloud-download"></i>Tenant einlesen
+                    </button>
+                </div>
+            </div>
+
+            <div class="live-banner" id="ssLiveBanner" role="status" aria-live="polite">
+                <span class="live-badge"><i class="bi bi-broadcast"></i>LIVE‑TENANT</span>
+                Du arbeitest gerade mit <strong>Live‑Daten</strong> aus Microsoft 365. Du kannst in den Details gezielt <strong>Anzeigename</strong>, <strong>Beschreibung</strong>, <strong>Owner</strong> und (je nach Typ) weitere Eigenschaften aktualisieren. Beim <strong>Tenant einlesen</strong> werden Besitzer- und Mitgliederzahlen per Graph <code>$count</code> ermittelt (für die Filter „ohne …“).
+            </div>
+
+            <div class="live-banner" id="ssMatchBanner" role="status" aria-live="polite" style="display:none;">
+                <span class="live-badge" style="background:rgba(94,114,228,0.14);border-color:rgba(94,114,228,0.25);color:#32325d;"><i class="bi bi-intersect"></i>ABGLEICH</span>
+                Hier verknüpfst du die <strong>SOLL‑Struktur</strong> (aus „Anlegen“) mit bereits vorhandenen <strong>Tenant‑Gruppen/Teams</strong> („Verwalten“). Das Mapping wird lokal gespeichert (später: SharePoint).
+            </div>
+
             <div class="layout">
                 <section class="panel" aria-label="Schulstruktur (Baumansicht)">
                     <div class="panel-head">
                         <h2><i class="bi bi-diagram-3" style="margin-right:10px;"></i>Struktur</h2>
                         <div class="tree-actions">
-                            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;flex:1;">
-                                <label for="ssAnsicht" style="font-weight:900;color:#32325d;">Ansicht</label>
-                                <select id="ssAnsicht" class="small-btn" style="padding:9px 10px;border-radius:10px;border:1px solid #ced4da;">
-                                    <option value="struktur" selected>Schulstruktur</option>
-                                    <option value="tenant">Tenant‑Gruppen/Teams (live)</option>
-                                </select>
-                            </div>
                             <button type="button" class="btn btn-success small-btn" id="ssBtnNeu"><i class="bi bi-plus-circle"></i>Neu</button>
                             <button type="button" class="btn small-btn" id="ssBtnDemo"><i class="bi bi-stars"></i>Demo</button>
                             <button type="button" class="btn btn-danger small-btn" id="ssBtnReset"><i class="bi bi-trash"></i>Zurücksetzen</button>
-                            <button type="button" class="btn small-btn" id="ssBtnTenantLogin" style="display:none;"><i class="bi bi-microsoft"></i>Anmelden</button>
-                            <button type="button" class="btn btn-success small-btn" id="ssBtnTenantLoad" style="display:none;"><i class="bi bi-cloud-download"></i>Tenant einlesen</button>
+                            <span id="ssWrapSchoolYearRollBtn">
+                                <button type="button" class="btn small-btn" id="ssBtnSchoolYearRoll"><i class="bi bi-arrow-up-right-circle"></i>Schuljahrswechsel</button>
+                            </span>
                         </div>
                         <div class="tree-filter" aria-label="Filter">
-                            <div>
+                            <div id="ssFilterSchuljahrWrap">
                                 <label for="ssFilterSchuljahr">Schuljahr</label>
                                 <select id="ssFilterSchuljahr">
                                     <option value="">(alle)</option>
                                 </select>
                             </div>
-                            <div>
+                            <div id="ssFilterTypWrap">
                                 <label for="ssFilterTyp">Typ</label>
                                 <select id="ssFilterTyp">
                                     <option value="">(alle)</option>
                                     <option value="Jahrgang">Jahrgang</option>
                                     <option value="Klasse">Klasse</option>
                                     <option value="Arbeitsgemeinschaft">Arbeitsgemeinschaft</option>
+                                    <option value="Kursteam">Kursteam</option>
                                     <option value="Gruppe">Gruppe</option>
+                                </select>
+                            </div>
+                            <div id="ssTenantVisibilityFilterWrap" style="display:none;">
+                                <label for="ssTenantVisibilityFilter">Sichtbarkeit</label>
+                                <select id="ssTenantVisibilityFilter">
+                                    <option value="" selected>(alle)</option>
+                                    <option value="Private">Privat</option>
+                                    <option value="Public">Öffentlich</option>
+                                </select>
+                            </div>
+                            <div id="ssTenantRosterFilterWrap" style="display:none;">
+                                <label for="ssTenantRosterFilter">Besitzer / Mitglieder</label>
+                                <select id="ssTenantRosterFilter">
+                                    <option value="" selected>(alle)</option>
+                                    <option value="noOwners">Ohne Besitzer</option>
+                                    <option value="noMembers">Ohne Mitglieder</option>
+                                    <option value="noOwnersNoMembers">Ohne Besitzer &amp; ohne Mitglieder</option>
                                 </select>
                             </div>
                             <div style="grid-column:1 / -1;">
@@ -213,10 +475,50 @@
                             <li class="stat"><div class="n" id="ssStatFehler">–</div><div class="l">Fehler</div></li>
                         </ul>
 
-                        <ul class="tree" id="ssTree" aria-label="Schulstruktur (Liste)"></ul>
-                        <p class="muted" id="ssModeHint" style="margin:10px 2px 0; font-size:0.92em;">
-                            Hinweis: Das ist die v1‑Mock‑Ansicht (lokal im Browser). Nächster Schritt: SharePoint‑Listen als Datenquelle.
-                        </p>
+                        <div id="ssTenantProgressWrap" style="display:none; margin-top:12px; border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:var(--soft);">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                                <div style="font-weight:900; color:#32325d;"><i class="bi bi-cloud-download" style="margin-right:8px;"></i>Tenant wird eingelesen …</div>
+                                <div id="ssTenantProgressPct" class="pill" title="Fortschritt (Schätzung)">–</div>
+                            </div>
+                            <div id="ssTenantProgressText" class="muted" style="margin-top:6px; line-height:1.45;">
+                                Starte …
+                            </div>
+                            <div style="margin-top:10px;">
+                                <div style="height:10px; background:#e9ecef; border-radius:999px; overflow:hidden;">
+                                    <div id="ssTenantProgressBar" style="height:10px; width:0%; background:linear-gradient(135deg, var(--brand1) 0%, var(--brand2) 100%);"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="ssStructureViewTabsBar" class="detail-tabs-sticky" aria-label="Ansicht wechseln">
+                            <div class="detail-tabs" role="tablist" aria-label="Struktur-Ansicht">
+                                <button type="button" class="detail-tab-btn" id="ssViewTabTreeBtn" role="tab" aria-selected="true" aria-controls="ssTreeViewPanel">Baum</button>
+                                <button type="button" class="detail-tab-btn" id="ssViewTabGraphBtn" role="tab" aria-selected="false" aria-controls="ssGraphViewPanel">Organigramm</button>
+                            </div>
+                        </div>
+                        <div id="ssTreeViewPanel" class="tab-panel active" role="tabpanel" aria-labelledby="ssViewTabTreeBtn">
+                            <ul class="tree" id="ssTree" aria-label="Schulstruktur (Liste)"></ul>
+                            <p class="muted" id="ssModeHint" style="margin:10px 2px 0; font-size:0.92em;"></p>
+                        </div>
+                        <div id="ssGraphViewPanel" class="tab-panel" role="tabpanel" aria-labelledby="ssViewTabGraphBtn" aria-label="Organigramm SOLL">
+                            <div class="ss-graph-toolbar" aria-label="Organigramm-Werkzeuge">
+                                <button type="button" class="btn small-btn ss-graph-layout-btn ss-graph-layout-btn--active" id="ssGraphLayoutHorizontalBtn" title="Layout waagrecht" aria-pressed="true"><i class="bi bi-diagram-3"></i>Horizontal</button>
+                                <button type="button" class="btn small-btn ss-graph-layout-btn" id="ssGraphLayoutVerticalBtn" title="Layout senkrecht" aria-pressed="false"><i class="bi bi-diagram-2"></i>Vertikal</button>
+                                <button type="button" class="btn small-btn" id="ssGraphCollapseAllBtn"><i class="bi bi-arrows-collapse"></i>Alles einklappen</button>
+                                <button type="button" class="btn small-btn" id="ssGraphExpandToClassesBtn"><i class="bi bi-ui-checks-grid"></i>Bis Klassen/Gruppen</button>
+                                <span style="flex:1"></span>
+                                <button type="button" class="btn small-btn" id="ssGraphEditBtn" disabled><i class="bi bi-pencil"></i>Bearbeiten</button>
+                                <button type="button" class="btn small-btn" id="ssGraphDeleteBtn" disabled><i class="bi bi-trash"></i>Löschen</button>
+                                <button type="button" class="btn small-btn" id="ssGraphCopyBtn" disabled><i class="bi bi-clipboard"></i>Kopieren</button>
+                                <button type="button" class="btn small-btn" id="ssGraphFullscreenBtn"><i class="bi bi-arrows-fullscreen"></i>Vollbild</button>
+                            </div>
+                            <div id="ssGraphFullscreenContainer">
+                                <div id="ssGraphWrap" aria-label="Organigramm-Fläche">
+                                    <svg id="ssGraphEdges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+                                    <div id="ssGraphNodes"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -230,98 +532,804 @@
                         </div>
 
                         <div id="ssDetail" style="display:none;">
-                            <div class="form-grid">
-                                <div class="field">
-                                    <label for="ssBezeichnung">Bezeichnung</label>
-                                    <input type="text" id="ssBezeichnung" autocomplete="off">
-                                </div>
-                                <div class="field">
-                                    <label for="ssTyp">Typ</label>
-                                    <select id="ssTyp">
-                                        <option value="Jahrgang">Jahrgang</option>
-                                        <option value="Klasse">Klasse</option>
-                                        <option value="Arbeitsgemeinschaft">Arbeitsgemeinschaft</option>
-                                        <option value="Gruppe">Gruppe</option>
-                                    </select>
-                                </div>
-                                <div class="field">
-                                    <label for="ssSchuljahr">Schuljahr</label>
-                                    <input type="text" id="ssSchuljahr" placeholder="z. B. 2026/27" autocomplete="off">
-                                </div>
-                                <div class="field">
-                                    <label for="ssStatus">Status</label>
-                                    <select id="ssStatus">
-                                        <option value="Aktiv">Aktiv</option>
-                                        <option value="Inaktiv">Inaktiv</option>
-                                        <option value="Archiviert">Archiviert</option>
-                                    </select>
-                                </div>
-                                <div class="field">
-                                    <label for="ssUebergeordnet">Übergeordnete Einheit</label>
-                                    <select id="ssUebergeordnet">
-                                        <option value="">(keine)</option>
-                                    </select>
-                                </div>
-                                <div class="field">
-                                    <label for="ssSyncStatus">Letzter Sync‑Status</label>
-                                    <select id="ssSyncStatus">
-                                        <option value="Ausstehend">Ausstehend</option>
-                                        <option value="Ok">Ok</option>
-                                        <option value="Abweichung">Abweichung</option>
-                                        <option value="Fehler">Fehler</option>
-                                    </select>
-                                </div>
-                                <div class="field" style="grid-column:1 / -1;">
-                                    <label for="ssLetzteFehlermeldung">Letzte Fehlermeldung</label>
-                                    <textarea id="ssLetzteFehlermeldung" placeholder="optional – nur für Mock/Statusanzeigen"></textarea>
+                            <div class="detail-tabs-sticky" aria-label="Schulstruktur-Details Tabs (sticky)">
+                                <div class="detail-tabs" role="tablist" aria-label="Schulstruktur-Details Tabs">
+                                    <button type="button" class="detail-tab-btn" id="ssStructTabAllgemeinBtn" role="tab" aria-selected="true" aria-controls="ssStructTabAllgemein">Allgemein</button>
+                                    <button type="button" class="detail-tab-btn" id="ssStructTabOwnerBtn" role="tab" aria-selected="false" aria-controls="ssStructTabOwner">Owner</button>
+                                    <button type="button" class="detail-tab-btn" id="ssStructTabMitgliederBtn" role="tab" aria-selected="false" aria-controls="ssStructTabMitglieder">Mitglieder</button>
                                 </div>
                             </div>
 
-                            <div class="detail-actions">
-                                <button type="button" class="btn btn-success" id="ssBtnSpeichern"><i class="bi bi-check2-circle"></i>Speichern</button>
-                                <button type="button" class="btn" id="ssBtnNeuUnter"><i class="bi bi-plus-circle"></i>Unterpunkt</button>
-                                <button type="button" class="btn btn-danger" id="ssBtnLoeschen"><i class="bi bi-trash"></i>Löschen</button>
+                            <div id="ssStructTabAllgemein" class="tab-panel active" role="tabpanel" aria-labelledby="ssStructTabAllgemeinBtn">
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="ssBezeichnung">Bezeichnung</label>
+                                        <input type="text" id="ssBezeichnung" autocomplete="off">
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssBeschreibung">Beschreibung</label>
+                                        <textarea id="ssBeschreibung" rows="3" autocomplete="off" placeholder="Wird bei „Im Tenant anlegen“ als Beschreibung der Microsoft‑365‑Gruppe (Graph-Feld description) gesetzt."></textarea>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTyp">Typ</label>
+                                        <select id="ssTyp">
+                                            <option value="Jahrgang">Jahrgang</option>
+                                            <option value="Klasse">Klasse</option>
+                                            <option value="Arbeitsgemeinschaft">Arbeitsgemeinschaft</option>
+                                            <option value="Kursteam">Kursteam</option>
+                                            <option value="Gruppe">Gruppe</option>
+                                            <option value="Person">Person</option>
+                                        </select>
+                                        <p id="ssTypM365Hint" class="muted" style="margin:8px 0 0; font-size:0.88em; line-height:1.45;"></p>
+                                    </div>
+                                    <div id="ssPersonKontaktWrap" class="field" style="grid-column:1 / -1; display:none;">
+                                        <div class="form-grid" style="margin-top:0;">
+                                            <div class="field">
+                                                <label for="ssPersonName">Name</label>
+                                                <input type="text" id="ssPersonName" autocomplete="name" placeholder="Vorname Nachname">
+                                            </div>
+                                            <div class="field">
+                                                <label for="ssPersonEmail">E‑Mail / UPN</label>
+                                                <input type="text" id="ssPersonEmail" autocomplete="email" inputmode="email" placeholder="name@schule.at">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssSchuljahr">Schuljahr</label>
+                                        <input type="text" id="ssSchuljahr" placeholder="z. B. 2026/27" autocomplete="off">
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssStatus">Status</label>
+                                        <select id="ssStatus">
+                                            <option value="Aktiv">Aktiv</option>
+                                            <option value="Inaktiv">Inaktiv</option>
+                                            <option value="Archiviert">Archiviert</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssUebergeordnet">Übergeordnete Einheit</label>
+                                        <select id="ssUebergeordnet">
+                                            <option value="">(keine)</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssSyncStatus">Letzter Sync‑Status</label>
+                                        <select id="ssSyncStatus">
+                                            <option value="Ausstehend">Ausstehend</option>
+                                            <option value="Ok">Ok</option>
+                                            <option value="Abweichung">Abweichung</option>
+                                            <option value="Fehler">Fehler</option>
+                                        </select>
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssLetzteFehlermeldung">Letzte Fehlermeldung</label>
+                                        <textarea id="ssLetzteFehlermeldung" placeholder="optional – nur für Mock/Statusanzeigen"></textarea>
+                                    </div>
+                                </div>
+
+                                <div id="ssAnlegenSchemaUnitBox" class="teachers-table-wrap" style="margin-top:12px; display:none;" aria-label="Namensschema (Vorschau)">
+                                    <div style="padding:10px 12px;">
+                                        <div class="pill" style="margin-bottom:10px;"><i class="bi bi-magic"></i>Namensschema (Vorschau)</div>
+
+                                        <div id="ssAnlegenSchemaJg" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssJgYear">Abschlussjahr (YYYY)</label>
+                                                    <input type="text" id="ssJgYear" placeholder="z. B. 2030" inputmode="numeric" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssJgSuffix">Kürzel/Suffix</label>
+                                                    <input type="text" id="ssJgSuffix" placeholder="z. B. AK" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="ssAnlegenSchemaArge" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssArgeCode">Fach‑Kürzel</label>
+                                                    <input type="text" id="ssArgeCode" placeholder="z. B. M" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssArgeName">Fachname (optional)</label>
+                                                    <input type="text" id="ssArgeName" placeholder="z. B. Mathematik" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="ssAnlegenSchemaKursteam" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssKtKlasse">Klasse</label>
+                                                    <input type="text" id="ssKtKlasse" placeholder="z. B. 1AK" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssKtFach">Fach</label>
+                                                    <input type="text" id="ssKtFach" placeholder="z. B. D" autocomplete="off">
+                                                </div>
+                                                <div class="field" style="grid-column:1 / -1;">
+                                                    <label for="ssKtGruppe">Gruppe (optional)</label>
+                                                    <input type="text" id="ssKtGruppe" placeholder="z. B. G1" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="ssAnlegenSchemaUnitPreview" class="muted" style="margin-top:8px; line-height:1.5;"></div>
+                                        <div class="detail-actions" style="margin-top:10px;">
+                                            <button type="button" class="btn btn-success" id="ssApplyNameSuggestion"><i class="bi bi-arrow-down-circle"></i>Vorschlag in Bezeichnung übernehmen</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="ssStructTenantCreateWrap" class="hint" style="margin-top:12px; display:none;" aria-label="Im Tenant anlegen">
+                                    <div style="font-weight:1000;color:#32325d;margin-bottom:8px;"><i class="bi bi-cloud-plus"></i>Im Tenant anlegen</div>
+                                    <div class="muted" style="margin-bottom:10px; line-height:1.45;">
+                                        Erstellt (optional) eine <strong>M365‑Gruppe</strong> oder ein <strong>Team</strong> anhand deiner SOLL‑Einheit. Owner/Mitglieder aus „Anlegen“ werden – wenn vorhanden – übernommen.
+                                    </div>
+                                    <div class="form-grid" style="margin-top:0;">
+                                        <div class="field">
+                                            <label for="ssStructTenantTarget">Ziel</label>
+                                            <select id="ssStructTenantTarget">
+                                                <option value="group">Gruppe</option>
+                                                <option value="team">Team</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label for="ssStructTenantVisibility">Sichtbarkeit</label>
+                                            <select id="ssStructTenantVisibility">
+                                                <option value="Private" selected>Privat</option>
+                                                <option value="Public">Öffentlich</option>
+                                                <option value="HiddenMembership">HiddenMembership (Kursteam)</option>
+                                            </select>
+                                        </div>
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructTenantMailNick">Mail‑Nickname (Vorschlag)</label>
+                                            <input type="text" id="ssStructTenantMailNick" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                                        </div>
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructTenantCreatedId">Erstellt (Gruppen‑ID)</label>
+                                            <input type="text" id="ssStructTenantCreatedId" readonly placeholder="(noch nicht erstellt)" style="font-family:Consolas, 'Segoe UI', monospace;">
+                                        </div>
+                                    </div>
+                                    <div class="detail-actions">
+                                        <button type="button" class="btn btn-success" id="ssStructTenantCreateBtn"><i class="bi bi-cloud-plus"></i>Anlegen im Tenant</button>
+                                    </div>
+
+                                    <div id="ssStructKursteamPsWrap" class="hint" style="display:none; margin-top:12px;">
+                                        <div style="font-weight:1000;color:#32325d;margin-bottom:8px;"><i class="bi bi-terminal"></i>Kursteam: PowerShell (CSV)</div>
+                                        <div class="muted" style="margin-bottom:10px; line-height:1.45;">
+                                            Für Kursteams ist „Online anlegen“ in vielen Umgebungen nicht zuverlässig. Nutze daher CSV + PowerShell.
+                                        </div>
+                                        <div class="detail-actions" style="margin-top:0;">
+                                            <button type="button" class="btn btn-success" id="ssKursteamCsvDownload"><i class="bi bi-filetype-csv"></i>CSV herunterladen</button>
+                                            <button type="button" class="btn" id="ssKursteamPsCopy"><i class="bi bi-clipboard"></i>Script kopieren</button>
+                                            <button type="button" class="btn" id="ssKursteamPsDownload"><i class="bi bi-download"></i>.ps1 herunterladen</button>
+                                        </div>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label for="ssKursteamPsScript">Script (liest CSV und legt Kursteams an)</label>
+                                            <textarea id="ssKursteamPsScript" readonly></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="ssBtnSpeichern"><i class="bi bi-check2-circle"></i>Speichern</button>
+                                    <button type="button" class="btn" id="ssBtnGraphCreate" style="display:none;"><i class="bi bi-cloud-plus"></i>Per Graph anlegen</button>
+                                    <button type="button" class="btn btn-danger" id="ssBtnLoeschen"><i class="bi bi-trash"></i>Löschen</button>
+                                </div>
+                                <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
+                                    Hinweis: Owner/Mitglieder-Listen gelten für Gruppen, Kursteams usw. (lokal gespeichert). Bei Typ „Person“ entfallen diese Register — Zuordnung von Benutzern steuerst du an der übergeordneten Gruppe.
+                                </p>
                             </div>
-                            <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
-                                Nächster Schritt (geplant): Mitglieder/Besitzer direkt hier pflegen (Entra‑Suche) + SharePoint‑Listen + M365‑Sync.
-                            </p>
+
+                            <div id="ssStructTabOwner" class="tab-panel" role="tabpanel" aria-labelledby="ssStructTabOwnerBtn">
+                                <div class="settings-module" style="margin-top:14px;">
+                                    <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Owner</h3>
+                                    <div id="ssStructOwnerTabHint" class="hint" style="margin-bottom:10px;">
+                                        Owner für diese Einheit (lokal gespeichert). Wenn du oben rechts angemeldet bist, kannst du User bequem über Entra suchen.
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                        <div class="field" style="margin:0;">
+                                            <label for="ssStructOwnerSearch">Benutzer suchen</label>
+                                            <input type="text" id="ssStructOwnerSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                        </div>
+                                        <button type="button" class="btn" id="ssStructOwnerSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                    </div>
+                                    <div class="field" style="margin-top:10px;">
+                                        <label for="ssStructOwnerSearchResults">Treffer</label>
+                                        <select id="ssStructOwnerSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                    </div>
+                                    <div class="detail-actions" style="margin-top:10px;">
+                                        <button type="button" class="btn btn-success" id="ssStructOwnerAddBtn"><i class="bi bi-person-plus"></i>Owner hinzufügen</button>
+                                    </div>
+                                    <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Owner-Liste (Schulstruktur)">
+                                        <div id="ssStructOwnersList" style="padding:10px 12px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="ssStructTabMitglieder" class="tab-panel" role="tabpanel" aria-labelledby="ssStructTabMitgliederBtn">
+                                <div class="settings-module" style="margin-top:14px;">
+                                    <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Mitglieder</h3>
+                                    <div id="ssStructMemberTabHint" class="hint" style="margin-bottom:10px;">
+                                        Mitglieder für diese Einheit (lokal gespeichert). Wenn du oben rechts angemeldet bist, kannst du User bequem über Entra suchen.
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                        <div class="field" style="margin:0;">
+                                            <label for="ssStructMemberSearch">Benutzer suchen</label>
+                                            <input type="text" id="ssStructMemberSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                        </div>
+                                        <button type="button" class="btn" id="ssStructMemberSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                    </div>
+                                    <div class="field" style="margin-top:10px;">
+                                        <label for="ssStructMemberSearchResults">Treffer</label>
+                                        <select id="ssStructMemberSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                    </div>
+                                    <div class="detail-actions" style="margin-top:10px;">
+                                        <button type="button" class="btn btn-success" id="ssStructMemberAddBtn"><i class="bi bi-person-plus"></i>Mitglied hinzufügen</button>
+                                    </div>
+                                    <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Mitglieder-Liste (Schulstruktur)">
+                                        <div id="ssStructMembersList" style="padding:10px 12px;"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div id="ssTenantDetail" style="display:none;">
-                            <div class="hint" style="margin-bottom:12px;">
-                                Tenant‑Inventar ist aktuell <strong>nur lesend</strong>. Damit kannst du im Live‑Tenant gefahrlos sehen, was es bereits gibt.
+                            <div class="detail-tabs-sticky" aria-label="Tenant-Details Tabs (sticky)">
+                                <div class="detail-tabs" role="tablist" aria-label="Tenant-Details Tabs">
+                                    <button type="button" class="detail-tab-btn" id="ssTenantTabAllgemeinBtn" role="tab" aria-selected="true" aria-controls="ssTenantTabAllgemein">Allgemein</button>
+                                    <button type="button" class="detail-tab-btn" id="ssTenantTabOwnerBtn" role="tab" aria-selected="false" aria-controls="ssTenantTabOwner">Owner</button>
+                                    <button type="button" class="detail-tab-btn" id="ssTenantTabMitgliederBtn" role="tab" aria-selected="false" aria-controls="ssTenantTabMitglieder">Mitglieder</button>
+                                </div>
                             </div>
-                            <div class="form-grid">
-                                <div class="field">
-                                    <label for="ssTenantName">Anzeigename</label>
-                                    <input type="text" id="ssTenantName" readonly>
+
+                            <div id="ssTenantTabAllgemein" class="tab-panel active" role="tabpanel" aria-labelledby="ssTenantTabAllgemeinBtn">
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="ssTenantName">Anzeigename</label>
+                                        <input type="text" id="ssTenantName">
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTenantArt">Art</label>
+                                        <input type="text" id="ssTenantArt" readonly>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTenantMail">E‑Mail</label>
+                                        <input type="text" id="ssTenantMail" readonly>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTenantVisibility">Sichtbarkeit</label>
+                                        <select id="ssTenantVisibility">
+                                            <option value="" selected>(nicht unterstützt)</option>
+                                            <option value="Private">Privat</option>
+                                            <option value="Public">Öffentlich</option>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTenantExpires">Ablaufdatum</label>
+                                        <div style="display:flex; gap:10px; align-items:center;">
+                                            <input type="text" id="ssTenantExpires" readonly placeholder="(kein Ablaufdatum)">
+                                            <button type="button" class="btn small-btn" id="ssTenantRenewBtn" style="margin:0; padding:10px 12px;" title="Ablaufdatum verlängern" aria-label="Ablaufdatum verlängern">
+                                                <i class="bi bi-calendar2-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssTenantAlias">Alias</label>
+                                        <input type="text" id="ssTenantAlias" readonly>
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssTenantDescription">Beschreibung</label>
+                                        <textarea id="ssTenantDescription" placeholder="Microsoft‑365‑Gruppe: Graph-Feld „description“ (optional)"></textarea>
+                                    </div>
+                                    <div id="ssTenantTeamArchiveWrap" class="field" style="grid-column:1 / -1; display:none;">
+                                        <label for="ssTenantArchiveState">Teams‑Archiv (Microsoft Teams)</label>
+                                        <small class="muted" style="display:block;margin:4px 0 8px;line-height:1.45;">Gilt für jede Microsoft 365‑Gruppe, an die ein Team gebunden ist (Allgemeines Team, Kursteam usw.). Reine Gruppen ohne Team können hier nicht archiviert werden.</small>
+                                        <select id="ssTenantArchiveState" style="max-width:420px;">
+                                            <option value="active">Aktiv (nicht archiviert)</option>
+                                            <option value="archived">Archiviert</option>
+                                        </select>
+                                        <p id="ssTenantArchiveHint" class="muted" style="margin:6px 0 0; font-size:0.88em; display:none;"></p>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label style="display:flex; align-items:flex-start; gap:10px; font-weight:600; cursor:pointer;">
+                                                <input type="checkbox" id="ssTenantArchiveSpoReadonly" style="margin-top:4px;">
+                                                <span>SharePoint‑Teamwebsite für Mitglieder schreibgeschützt (<code>shouldSetSpoSiteReadOnlyForMembers</code>) – nur bei Archivierung, nur delegierte Anmeldung</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssTenantId">Gruppen‑ID</label>
+                                        <input type="text" id="ssTenantId" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                                    </div>
                                 </div>
-                                <div class="field">
-                                    <label for="ssTenantArt">Art</label>
-                                    <input type="text" id="ssTenantArt" readonly>
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="ssTenantUpdateBtn"><i class="bi bi-save"></i>Update</button>
+                                    <button type="button" class="btn" id="ssTenantReloadBtn"><i class="bi bi-arrow-clockwise"></i>Neu laden</button>
+                                    <button type="button" class="btn btn-danger" id="ssTenantDeleteBtn"><i class="bi bi-trash"></i>Löschen</button>
                                 </div>
-                                <div class="field">
-                                    <label for="ssTenantMail">E‑Mail</label>
-                                    <input type="text" id="ssTenantMail" readonly>
+                                <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
+                                    Hinweis: Update speichert <strong>Anzeigename</strong>, <strong>Beschreibung</strong>, <strong>Sichtbarkeit</strong> (Unified) sowie optional den <strong>Teams‑Archiv‑Status</strong>, sofern an der Gruppe ein Microsoft‑Teams‑Workload hängt. E‑Mail/Alias bleiben unverändert. Archivierung erfordert die Graph‑Berechtigung <strong>TeamSettings.ReadWrite.All</strong>.
+                                </p>
+                            </div>
+
+                            <div id="ssTenantTabOwner" class="tab-panel" role="tabpanel" aria-labelledby="ssTenantTabOwnerBtn">
+                                <div class="settings-module" style="margin-top:14px;">
+                                    <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Besitzer (Owner)</h3>
+                                    <div class="hint" style="margin-bottom:10px;">
+                                        Besitzer steuern Verwaltung und (je nach Typ) Berechtigungen. Tipp: Entfernen des letzten Besitzers ist gesperrt.
+                                    </div>
+
+                                    <div id="ssTenantBulkWrap" style="display:none; margin: 0 0 12px; border:1px solid var(--border); border-radius:12px; padding:10px 12px; background:#fff;">
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+                                            <div style="font-weight:1000; color:#32325d;">
+                                                <i class="bi bi-check2-square" style="margin-right:8px;"></i>
+                                                <span id="ssTenantBulkCount">0</span> ausgewählt (Bulk‑Modus)
+                                            </div>
+                                            <button type="button" class="btn btn-danger small-btn" id="ssTenantBulkClear"><i class="bi bi-x-circle"></i>Auswahl löschen</button>
+                                        </div>
+
+                                        <div style="display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-top:10px;">
+                                            <div class="field" style="margin:0;">
+                                                <label for="ssTenantBulkOwnerSearch">Owner suchen</label>
+                                                <input type="text" id="ssTenantBulkOwnerSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                            </div>
+                                            <button type="button" class="btn" id="ssTenantBulkOwnerSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                        </div>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label for="ssTenantBulkOwnerResults">Treffer</label>
+                                            <select id="ssTenantBulkOwnerResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                        </div>
+                                        <div class="detail-actions" style="margin-top:10px;">
+                                            <button type="button" class="btn btn-success" id="ssTenantBulkAddOwnerBtn"><i class="bi bi-people-fill"></i>Owner zu allen hinzufügen</button>
+                                        </div>
+                                        <p class="muted" style="margin:10px 0 0; font-size:0.9em;">
+                                            Tipp: Mit <strong>STRG</strong> (Windows) bzw. <strong>⌘</strong> (Mac) mehrere Einträge anklicken.
+                                        </p>
+                                    </div>
+
+                                    <div id="ssTenantOwnerSingleWrap">
+                                        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                            <div class="field" style="margin:0;">
+                                                <label for="ssOwnerSearch">Benutzer suchen</label>
+                                                <input type="text" id="ssOwnerSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                            </div>
+                                            <button type="button" class="btn" id="ssOwnerSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                        </div>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label for="ssOwnerSearchResults">Treffer</label>
+                                            <select id="ssOwnerSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                        </div>
+                                        <div class="detail-actions" style="margin-top:10px;">
+                                            <button type="button" class="btn btn-success" id="ssOwnerAddBtn"><i class="bi bi-person-plus"></i>Owner hinzufügen</button>
+                                            <button type="button" class="btn" id="ssOwnersReloadBtn"><i class="bi bi-arrow-clockwise"></i>Owner neu laden</button>
+                                        </div>
+                                        <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Owner-Liste">
+                                            <div id="ssOwnersList" style="padding:10px 12px;"></div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="field">
-                                    <label for="ssTenantAlias">Alias</label>
-                                    <input type="text" id="ssTenantAlias" readonly>
+                            </div>
+
+                            <div id="ssTenantTabMitglieder" class="tab-panel" role="tabpanel" aria-labelledby="ssTenantTabMitgliederBtn">
+                                <div class="settings-module" style="margin-top:14px;">
+                                    <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Mitglieder</h3>
+                                    <div class="hint" style="margin-bottom:10px;">
+                                        Mitglieder sind die „normalen“ Teilnehmer der Gruppe/des Teams. Hinweis: Bei sehr großen Gruppen wird die Liste aus Performance‑Gründen gekürzt angezeigt.
+                                    </div>
+                                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                        <div class="field" style="margin:0;">
+                                            <label for="ssMemberSearch">Benutzer suchen</label>
+                                            <input type="text" id="ssMemberSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                        </div>
+                                        <button type="button" class="btn" id="ssMemberSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                    </div>
+                                    <div class="field" style="margin-top:10px;">
+                                        <label for="ssMemberSearchResults">Treffer</label>
+                                        <select id="ssMemberSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                    </div>
+                                    <div class="detail-actions" style="margin-top:10px;">
+                                        <button type="button" class="btn btn-success" id="ssMemberAddBtn"><i class="bi bi-person-plus"></i>Mitglied hinzufügen</button>
+                                        <button type="button" class="btn" id="ssMembersReloadBtn"><i class="bi bi-arrow-clockwise"></i>Mitglieder neu laden</button>
+                                    </div>
+                                    <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Mitglieder-Liste">
+                                        <div id="ssMembersList" style="padding:10px 12px;"></div>
+                                    </div>
                                 </div>
-                                <div class="field" style="grid-column:1 / -1;">
-                                    <label for="ssTenantId">Gruppen‑ID</label>
-                                    <input type="text" id="ssTenantId" readonly style="font-family:Consolas, 'Segoe UI', monospace;">
+                            </div>
+                        </div>
+
+                        <div id="ssMatchDetail" style="display:none;">
+                            <div class="hint" style="margin-bottom:12px;">
+                                Wähle links eine Einheit aus (Klasse/Jahrgang/Gruppe/Person). Rechts verknüpfst du sie mit einer <strong>Microsoft‑365‑Gruppe/einem Team</strong> oder – bei <strong>Person</strong> (z. B. Direktion, Verwaltung) – mit einem <strong>Entra‑Benutzerkonto</strong>.
+                                Tipp: Unter <strong>Verwalten</strong> „Tenant einlesen“ (lädt Gruppen und Benutzer), dann hier abgleichen.
+                            </div>
+                            <div class="settings-module" style="margin-top:14px;">
+                                <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Verknüpfung</h3>
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="ssMatchUnit">SOLL‑Einheit</label>
+                                        <input type="text" id="ssMatchUnit" readonly>
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssMatchTenantSearch">In Zuordnungen suchen</label>
+                                        <input type="search" id="ssMatchTenantSearch" placeholder="z. B. Teamname, Alias, UPN, E‑Mail …" autocomplete="off">
+                                        <p class="muted" id="ssMatchTenantFilterCount" style="margin:6px 0 0;font-size:0.88em;line-height:1.4;" aria-live="polite"></p>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssMatchTenantGroup">Tenant (Gruppe/Team oder Benutzer)</label>
+                                        <select id="ssMatchTenantGroup"></select>
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssMatchNote">Notiz</label>
+                                        <textarea id="ssMatchNote" placeholder="Optional – z. B. warum diese Zuordnung"></textarea>
+                                    </div>
                                 </div>
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="ssMatchSaveBtn"><i class="bi bi-link-45deg"></i>Verknüpfen</button>
+                                    <button type="button" class="btn" id="ssMatchClearBtn"><i class="bi bi-x-circle"></i>Verknüpfung lösen</button>
+                                    <button type="button" class="btn" id="ssMatchSuggestBtn"><i class="bi bi-magic"></i>Vorschlag</button>
+                                </div>
+                                <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
+                                    Hinweis: „Vorschlag“ nutzt bei Gruppen Name/Alias, bei Personen Name, E‑Mail und Rollenbezeichnung gegen Entra‑Benutzer. Du kannst jederzeit manuell überschreiben.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </section>
             </div>
+
+            <section class="panel" id="ssAnlegenSettingsPanel" style="display:none; margin-top:16px;" aria-label="Namens-Schemata & Vorschau">
+                <div class="panel-head">
+                    <h2><i class="bi bi-sliders2" style="margin-right:10px;"></i>Schemata &amp; Vorschau</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="hint" style="margin-bottom:12px;">
+                        Hier legst du die <strong>Namens‑Schemata</strong> für <strong>Jahrgangsgruppen</strong>, <strong>ARGEs</strong> und <strong>Kursteams</strong> fest.
+                        Die Vorschau zeigt, wie <strong>Anzeigename</strong> und <strong>Mail‑Nickname</strong> später generiert werden.
+                    </div>
+
+                    <div class="settings-module" style="margin-top:14px;">
+                        <div class="form-grid" style="margin-top:0;">
+                            <div class="field" style="grid-column:1 / -1;">
+                                <label for="ssSchemaDomain">Schul‑Domain (für Vorschau)</label>
+                                <input type="text" id="ssSchemaDomain" placeholder="z. b. ms365.schule" autocomplete="off">
+                            </div>
+                        </div>
+
+                        <div class="detail-tabs-sticky" aria-label="Schema-Tabs (sticky)">
+                            <div class="detail-tabs" role="tablist" aria-label="Schema-Tabs">
+                                <button type="button" class="detail-tab-btn" id="ssSchemaTabKursteamBtn" role="tab" aria-selected="true" aria-controls="ssSchemaTabKursteam">Kursteams</button>
+                                <button type="button" class="detail-tab-btn" id="ssSchemaTabJahrgangBtn" role="tab" aria-selected="false" aria-controls="ssSchemaTabJahrgang">Jahrgangsgruppen</button>
+                                <button type="button" class="detail-tab-btn" id="ssSchemaTabArgeBtn" role="tab" aria-selected="false" aria-controls="ssSchemaTabArge">ARGEs</button>
+                            </div>
+                        </div>
+
+                        <div id="ssSchemaTabKursteam" class="tab-panel active" role="tabpanel" aria-labelledby="ssSchemaTabKursteamBtn">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="ssSchemaSchoolYearPrefix">Schuljahr‑Präfix</label>
+                                    <input type="text" id="ssSchemaSchoolYearPrefix" placeholder="z. b. SJ26" autocomplete="off">
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="ssSchemaKursteamPattern">Kursteam‑Schema (Anzeige) – Platzhalter: {yearPrefix} {klasse} {fach} {gruppe}</label>
+                                    <input type="text" id="ssSchemaKursteamPattern" placeholder="{yearPrefix} | {klasse} | {fach}" autocomplete="off">
+                                </div>
+                                <div class="field" style="grid-column:1 / -1;">
+                                    <label for="ssSchemaKursteamMailNickPattern">Kursteam‑Schema (Mail‑Nickname) – Platzhalter: {yearPrefix} {klasse} {fach} {gruppe}</label>
+                                    <input type="text" id="ssSchemaKursteamMailNickPattern" placeholder="kt-{yearPrefix}-{klasse}-{fach}" autocomplete="off">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="ssSchemaTabJahrgang" class="tab-panel" role="tabpanel" aria-labelledby="ssSchemaTabJahrgangBtn">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="ssSchemaJgPrefix">Präfix (Mail‑Nickname)</label>
+                                    <input type="text" id="ssSchemaJgPrefix" placeholder="jg" autocomplete="off">
+                                </div>
+                                <div class="field" style="display:flex;align-items:end;">
+                                    <label class="checkbox-label" for="ssSchemaJgUpper" style="margin:0;align-items:flex-start;">
+                                        <input type="checkbox" id="ssSchemaJgUpper" checked>
+                                        <span>Kürzel groß schreiben (Mail‑Nickname)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="ssSchemaTabArge" class="tab-panel" role="tabpanel" aria-labelledby="ssSchemaTabArgeBtn">
+                            <div class="form-grid">
+                                <div class="field">
+                                    <label for="ssSchemaArgePrefix">Präfix (Mail‑Nickname)</label>
+                                    <input type="text" id="ssSchemaArgePrefix" placeholder="arge" autocomplete="off">
+                                </div>
+                                <div class="field" style="display:flex;align-items:end;">
+                                    <label class="checkbox-label" for="ssSchemaArgeUpper" style="margin:0;align-items:flex-start;">
+                                        <input type="checkbox" id="ssSchemaArgeUpper">
+                                        <span>Mail‑Nickname groß schreiben</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Schema-Vorschau">
+                            <div style="padding:10px 12px;">
+                                <div class="pill" style="margin-bottom:10px;"><i class="bi bi-eye"></i>Vorschau</div>
+                                <div id="ssSchemaPreview" class="muted" style="line-height:1.5;"></div>
+                            </div>
+                        </div>
+
+                        <p class="muted" style="margin:12px 0 0; font-size:0.92em;">
+                            Hinweis: Diese Einstellungen gelten für „Anlegen“ (SOLL‑Struktur). Die tatsächliche Anlage im Tenant passiert später im Sync/Abgleich.
+                        </p>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
 
+                    <div id="ssStructModalsHome">
+                    <div class="ss-modal-backdrop" id="ssStructCreateModal" role="dialog" aria-modal="true" aria-label="Neues Element anlegen">
+                        <div class="ss-modal">
+                            <div class="ss-modal-head">
+                                <h3 id="ssStructCreateTitle">Neues Element</h3>
+                                <button type="button" class="ss-modal-close" id="ssStructCreateClose" aria-label="Schließen">✕</button>
+                            </div>
+                            <div class="ss-modal-body">
+                                <div class="hint" id="ssStructCreateHint" style="margin-bottom:12px;"></div>
+                                <div class="form-grid" style="margin-top:0;">
+                                    <div class="field">
+                                        <label for="ssStructCreateType">Typ</label>
+                                        <select id="ssStructCreateType"></select>
+                                    </div>
+                                    <div class="field">
+                                        <label for="ssStructCreateSchoolYear">Schuljahr</label>
+                                        <input type="text" id="ssStructCreateSchoolYear" placeholder="z. B. 2026/27" autocomplete="off">
+                                    </div>
+                                    <div class="field" style="grid-column:1 / -1;">
+                                        <label for="ssStructCreateName">Bezeichnung</label>
+                                        <input type="text" id="ssStructCreateName" placeholder="z. B. Jahrgang 1, 1A, ARGE Robotik …" autocomplete="off">
+                                    </div>
+                                </div>
+
+                                <div id="ssStructCreateSchemaWrap" class="teachers-table-wrap" style="margin-top:12px; display:none;">
+                                    <div style="padding:10px 12px;">
+                                        <div class="pill" style="margin-bottom:10px;"><i class="bi bi-magic"></i>Typ‑Details</div>
+                                        <div id="ssStructCreateSchemaJg" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssStructCreateJgYear">Abschlussjahr (YYYY)</label>
+                                                    <input type="text" id="ssStructCreateJgYear" inputmode="numeric" placeholder="z. B. 2030" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssStructCreateJgSuffix">Kürzel/Suffix</label>
+                                                    <input type="text" id="ssStructCreateJgSuffix" placeholder="z. B. AK" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="ssStructCreateSchemaArge" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssStructCreateArgeCode">Fach‑Kürzel</label>
+                                                    <input type="text" id="ssStructCreateArgeCode" placeholder="z. B. M" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssStructCreateArgeName">Fachname (optional)</label>
+                                                    <input type="text" id="ssStructCreateArgeName" placeholder="z. B. Mathematik" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="ssStructCreateSchemaKursteam" style="display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssStructCreateKtKlasse">Klasse</label>
+                                                    <input type="text" id="ssStructCreateKtKlasse" placeholder="z. B. 1AK" autocomplete="off">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssStructCreateKtFach">Fach</label>
+                                                    <input type="text" id="ssStructCreateKtFach" placeholder="z. B. D" autocomplete="off">
+                                                </div>
+                                                <div class="field" style="grid-column:1 / -1;">
+                                                    <label for="ssStructCreateKtGruppe">Gruppe (optional)</label>
+                                                    <input type="text" id="ssStructCreateKtGruppe" placeholder="z. B. G1" autocomplete="off">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="ssStructCreateOk"><i class="bi bi-plus-circle"></i>Anlegen</button>
+                                    <button type="button" class="btn" id="ssStructCreateCancel">Abbrechen</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ss-modal-backdrop" id="ssStructEditModal" role="dialog" aria-modal="true" aria-label="Element bearbeiten">
+                        <div class="ss-modal">
+                            <div class="ss-modal-head">
+                                <h3 id="ssStructEditTitle">Details</h3>
+                                <button type="button" class="ss-modal-close" id="ssStructEditClose" aria-label="Schließen">✕</button>
+                            </div>
+                            <div class="ss-modal-body">
+                                <div class="hint" id="ssStructEditHint" style="margin-bottom:12px;"></div>
+                                <div class="ss-tabs" role="tablist" aria-label="Details (SOLL-Struktur)" style="margin:0 0 10px;">
+                                    <button type="button" class="ss-tab-btn active" id="ssStructEditTabAllgBtn" role="tab" aria-selected="true" aria-controls="ssStructEditTabAllg">Allgemein</button>
+                                    <button type="button" class="ss-tab-btn" id="ssStructEditTabOwnerBtn" role="tab" aria-selected="false" aria-controls="ssStructEditTabOwner">Owner</button>
+                                    <button type="button" class="ss-tab-btn" id="ssStructEditTabMitglBtn" role="tab" aria-selected="false" aria-controls="ssStructEditTabMitgl">Mitglieder</button>
+                                </div>
+
+                                <div id="ssStructEditTabAllg" class="tab-panel active ss-tab-panel" role="tabpanel" aria-labelledby="ssStructEditTabAllgBtn" style="padding-top:0;">
+                                    <div class="form-grid" style="margin-top:0;">
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructEditName">Bezeichnung</label>
+                                            <input type="text" id="ssStructEditName" autocomplete="off">
+                                        </div>
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructEditBeschreibung">Beschreibung</label>
+                                            <textarea id="ssStructEditBeschreibung" rows="3" autocomplete="off" placeholder="Wird bei „Im Tenant anlegen“ als Beschreibung der Microsoft‑365‑Gruppe (Graph-Feld description) gesetzt."></textarea>
+                                        </div>
+                                        <div class="field">
+                                            <label for="ssStructEditType">Typ</label>
+                                            <input type="text" id="ssStructEditType" readonly>
+                                        </div>
+                                        <div id="ssStructEditPersonKontaktWrap" class="field" style="grid-column:1 / -1; display:none;">
+                                            <div class="form-grid" style="margin-top:0;">
+                                                <div class="field">
+                                                    <label for="ssStructEditPersonName">Name</label>
+                                                    <input type="text" id="ssStructEditPersonName" autocomplete="name">
+                                                </div>
+                                                <div class="field">
+                                                    <label for="ssStructEditPersonEmail">E‑Mail / UPN</label>
+                                                    <input type="text" id="ssStructEditPersonEmail" autocomplete="email" inputmode="email">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label for="ssStructEditSchoolYear">Schuljahr</label>
+                                            <input type="text" id="ssStructEditSchoolYear" placeholder="z. B. 2026/27" autocomplete="off">
+                                        </div>
+                                        <div class="field">
+                                            <label for="ssStructEditStatus">Status</label>
+                                            <select id="ssStructEditStatus">
+                                                <option value="Aktiv">Aktiv</option>
+                                                <option value="Inaktiv">Inaktiv</option>
+                                                <option value="Archiviert">Archiviert</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label for="ssStructEditParent">Übergeordnet</label>
+                                            <select id="ssStructEditParent"></select>
+                                        </div>
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructEditSyncStatus">Letzter Sync‑Status</label>
+                                            <select id="ssStructEditSyncStatus">
+                                                <option value="Ausstehend">Ausstehend</option>
+                                                <option value="Ok">Ok</option>
+                                                <option value="Abweichung">Abweichung</option>
+                                                <option value="Fehler">Fehler</option>
+                                            </select>
+                                        </div>
+                                        <div class="field" style="grid-column:1 / -1;">
+                                            <label for="ssStructEditLastError">Letzte Fehlermeldung</label>
+                                            <textarea id="ssStructEditLastError" placeholder="optional – nur für Mock/Statusanzeigen"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div id="ssStructEditSchemaWrap" class="teachers-table-wrap" style="margin-top:12px; display:none;">
+                                        <div style="padding:10px 12px;">
+                                            <div class="pill" style="margin-bottom:10px;"><i class="bi bi-magic"></i>Typ‑Details</div>
+                                            <div id="ssStructEditSchemaJg" style="display:none;">
+                                                <div class="form-grid" style="margin-top:0;">
+                                                    <div class="field">
+                                                        <label for="ssStructEditJgYear">Abschlussjahr (YYYY)</label>
+                                                        <input type="text" id="ssStructEditJgYear" inputmode="numeric" autocomplete="off">
+                                                    </div>
+                                                    <div class="field">
+                                                        <label for="ssStructEditJgSuffix">Kürzel/Suffix</label>
+                                                        <input type="text" id="ssStructEditJgSuffix" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="ssStructEditSchemaArge" style="display:none;">
+                                                <div class="form-grid" style="margin-top:0;">
+                                                    <div class="field">
+                                                        <label for="ssStructEditArgeCode">Fach‑Kürzel</label>
+                                                        <input type="text" id="ssStructEditArgeCode" autocomplete="off">
+                                                    </div>
+                                                    <div class="field">
+                                                        <label for="ssStructEditArgeName">Fachname (optional)</label>
+                                                        <input type="text" id="ssStructEditArgeName" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div id="ssStructEditSchemaKursteam" style="display:none;">
+                                                <div class="form-grid" style="margin-top:0;">
+                                                    <div class="field">
+                                                        <label for="ssStructEditKtKlasse">Klasse</label>
+                                                        <input type="text" id="ssStructEditKtKlasse" autocomplete="off">
+                                                    </div>
+                                                    <div class="field">
+                                                        <label for="ssStructEditKtFach">Fach</label>
+                                                        <input type="text" id="ssStructEditKtFach" autocomplete="off">
+                                                    </div>
+                                                    <div class="field" style="grid-column:1 / -1;">
+                                                        <label for="ssStructEditKtGruppe">Gruppe (optional)</label>
+                                                        <input type="text" id="ssStructEditKtGruppe" autocomplete="off">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="ssStructEditTabOwner" class="tab-panel ss-tab-panel" role="tabpanel" aria-labelledby="ssStructEditTabOwnerBtn">
+                                    <div class="settings-module" style="margin-top:14px;">
+                                        <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Owner</h3>
+                                        <div class="hint" style="margin-bottom:10px;">
+                                            Owner für diese Einheit (lokal gespeichert). Wenn du oben rechts angemeldet bist, kannst du User bequem über Entra suchen.
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                            <div class="field" style="margin:0;">
+                                                <label for="ssStructEditOwnerSearch">Benutzer suchen</label>
+                                                <input type="text" id="ssStructEditOwnerSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                            </div>
+                                            <button type="button" class="btn" id="ssStructEditOwnerSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                        </div>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label for="ssStructEditOwnerSearchResults">Treffer</label>
+                                            <select id="ssStructEditOwnerSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                        </div>
+                                        <div class="detail-actions" style="margin-top:10px;">
+                                            <button type="button" class="btn btn-success" id="ssStructEditOwnerAddBtn"><i class="bi bi-person-plus"></i>Owner hinzufügen</button>
+                                        </div>
+                                        <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Owner-Liste (Details Pop-Up)">
+                                            <div id="ssStructEditOwnersList" style="padding:10px 12px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="ssStructEditTabMitgl" class="tab-panel ss-tab-panel" role="tabpanel" aria-labelledby="ssStructEditTabMitglBtn">
+                                    <div class="settings-module" style="margin-top:14px;">
+                                        <h3 style="margin:0 0 10px;color:#32325d;font-size:1.05em;">Mitglieder</h3>
+                                        <div class="hint" style="margin-bottom:10px;">
+                                            Mitglieder für diese Einheit (lokal gespeichert). Optional über Entra suchen und hinzufügen.
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;">
+                                            <div class="field" style="margin:0;">
+                                                <label for="ssStructEditMemberSearch">Benutzer suchen</label>
+                                                <input type="text" id="ssStructEditMemberSearch" placeholder="Name oder UPN/E‑Mail" autocomplete="off">
+                                            </div>
+                                            <button type="button" class="btn" id="ssStructEditMemberSearchBtn" style="margin:0;"><i class="bi bi-search"></i>Suchen</button>
+                                        </div>
+                                        <div class="field" style="margin-top:10px;">
+                                            <label for="ssStructEditMemberSearchResults">Treffer</label>
+                                            <select id="ssStructEditMemberSearchResults" style="width:100%;padding:10px 12px;border:1px solid #ced4da;border-radius:10px;font:inherit;"></select>
+                                        </div>
+                                        <div class="detail-actions" style="margin-top:10px;">
+                                            <button type="button" class="btn btn-success" id="ssStructEditMemberAddBtn"><i class="bi bi-person-plus"></i>Mitglied hinzufügen</button>
+                                        </div>
+                                        <div class="teachers-table-wrap" style="margin-top:12px;" aria-label="Mitglieder-Liste (Details Pop-Up)">
+                                            <div id="ssStructEditMembersList" style="padding:10px 12px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-actions">
+                                    <button type="button" class="btn btn-success" id="ssStructEditSave"><i class="bi bi-save"></i>Speichern</button>
+                                    <button type="button" class="btn btn-danger" id="ssStructEditDelete"><i class="bi bi-trash"></i>Löschen</button>
+                                    <button type="button" class="btn" id="ssStructEditCancel">Schließen</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+
     <script src="../ms365-config.js"></script>
-    <script src="../src/tools/schulstruktur-sync/schulstruktur-sync.js" defer></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
+    <!-- structure-rules: Side-Effect-Import in schulstruktur-sync.js (Reihenfolge zu Modul-Bundles) -->
+    <script src="../src/tools/schulstruktur-sync/schulstruktur-sync.js" type="module"></script>
 </body>
 </html>
 

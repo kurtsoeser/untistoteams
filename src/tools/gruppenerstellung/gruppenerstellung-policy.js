@@ -14,7 +14,9 @@
     let gpCurrentStep = 1;
 
     function toast(msg) {
-        if (typeof window.ms365ShowToast === 'function') {
+        if (typeof window.ms365ToastOrAlert === 'function') {
+            window.ms365ToastOrAlert(msg);
+        } else if (typeof window.ms365ShowToast === 'function') {
             window.ms365ShowToast(msg);
         } else {
             window.alert(msg);
@@ -257,7 +259,8 @@
 
     async function findSecurityGroupByDisplayName(token, displayName) {
         const esc = String(displayName).replace(/'/g, "''");
-        const filter = "displayName eq '" + esc + "' and securityEnabled eq true";
+        const filter =
+            "displayName eq '" + esc + "' and securityEnabled eq true and mailEnabled eq false";
         const path = '/groups?$filter=' + encodeURIComponent(filter) + '&$top=25';
         const data = await graphJson('GET', path, token, undefined);
         const list = data.value || [];
@@ -268,7 +271,8 @@
         let nick = sanitizeMailNickname(displayName);
         const body = {
             displayName: String(displayName).trim(),
-            description: 'Berechtigte Benutzer dürfen Microsoft 365-Gruppen und Teams anlegen (Richtlinie Group.Unified).',
+            description:
+                'Nur Mitglieder dieser Gruppe dürfen im Mandanten einheitliche Microsoft 365-Gruppen und Teams anlegen (Entra-Richtlinie Group.Unified: EnableGroupCreation=false, diese Gruppe als GroupCreationAllowedGroupId). Es muss eine reine Sicherheitsgruppe sein (keine mail-aktivierte Gruppe).',
             mailEnabled: false,
             mailNickname: nick,
             securityEnabled: true,
@@ -285,10 +289,21 @@
         }
     }
 
+    function entraGroupBladeUrl(tab, groupId) {
+        return (
+            'https://entra.microsoft.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/' +
+            tab +
+            '/groupId/' +
+            encodeURIComponent(groupId)
+        );
+    }
+
     function setResolvedGroup(id, displayName) {
         const hid = document.getElementById('gpResolvedObjectId');
         const out = document.getElementById('gpResolvedSummary');
-        const link = document.getElementById('gpLinkMembers');
+        const linkOv = document.getElementById('gpLinkOverview');
+        const linkOwn = document.getElementById('gpLinkOwners');
+        const linkMem = document.getElementById('gpLinkMembers');
         if (hid) hid.value = id || '';
         if (out) {
             out.style.display = id ? 'block' : 'none';
@@ -296,13 +311,74 @@
                 ? 'Ausgewählte Gruppe: ' + (displayName ? displayName + ' · ' : '') + 'Object-ID ' + id
                 : '';
         }
-        if (link && id) {
-            link.href =
-                'https://entra.microsoft.com/#view/Microsoft_AAD_IAM/GroupDetailsMenuBlade/~/Members/groupId/' +
-                encodeURIComponent(id);
-            link.style.display = 'inline';
-        } else if (link) {
-            link.style.display = 'none';
+        [linkOv, linkOwn, linkMem].forEach(function (link) {
+            if (!link) return;
+            if (id) {
+                if (link === linkOv) link.href = entraGroupBladeUrl('Overview', id);
+                else if (link === linkOwn) link.href = entraGroupBladeUrl('Owners', id);
+                else link.href = entraGroupBladeUrl('Members', id);
+                link.style.display = 'inline';
+            } else {
+                link.style.display = 'none';
+            }
+        });
+    }
+
+    function describeGraphGroupKind(g) {
+        if (!g) return '–';
+        const types = g.groupTypes || [];
+        if (types.indexOf('Unified') !== -1) return 'Microsoft 365-Gruppe';
+        if (g.securityEnabled && g.mailEnabled) return 'E-Mail-Sicherheitsgruppe';
+        if (g.securityEnabled && !g.mailEnabled) return 'Sicherheitsgruppe';
+        if (g.mailEnabled) return 'Mail-aktivierte Gruppe';
+        return 'Gruppe';
+    }
+
+    async function loadGroupDetailsIntoStep2() {
+        const hid = document.getElementById('gpResolvedObjectId');
+        const gid = hid && hid.value ? hid.value.trim() : '';
+        const ph = document.getElementById('gpDetailsPlaceholder');
+        const dl = document.getElementById('gpDetailsDl');
+        if (!ph || !dl) return;
+        if (!guidLooksValid(gid)) {
+            ph.style.display = 'block';
+            ph.textContent = 'Keine gültige Gruppen-Object-ID – bitte zuerst Schritt 1 abschließen.';
+            dl.style.display = 'none';
+            return;
+        }
+        ph.style.display = 'block';
+        ph.textContent = 'Lese Gruppe aus Microsoft Graph …';
+        dl.style.display = 'none';
+        try {
+            const token = await getGraphToken();
+            const g = await getGroupById(token, gid);
+            if (!g.securityEnabled) {
+                ph.textContent =
+                    'Diese Gruppe ist keine Sicherheitsgruppe (securityEnabled=false). Bitte in Schritt 1 eine reine Sicherheitsgruppe wählen.';
+                dl.style.display = 'none';
+                return;
+            }
+            if (g.mailEnabled) {
+                ph.textContent =
+                    'Diese Gruppe ist mail-aktiviert (E-Mail-Sicherheitsgruppe). Für Group.Unified wird eine reine Sicherheitsgruppe benötigt (mailEnabled=false). Bitte in Schritt 1 eine passende Gruppe anlegen oder auswählen.';
+                dl.style.display = 'none';
+                return;
+            }
+            const setTxt = function (id, text) {
+                const n = document.getElementById(id);
+                if (n) n.textContent = text != null && String(text) !== '' ? String(text) : '–';
+            };
+            setTxt('gpDetDisplayName', g.displayName);
+            setTxt('gpDetType', describeGraphGroupKind(g));
+            setTxt('gpDetDescription', g.description);
+            setTxt('gpDetMailNick', g.mailNickname);
+            setTxt('gpDetId', g.id);
+            ph.style.display = 'none';
+            dl.style.display = 'block';
+        } catch (e) {
+            ph.style.display = 'block';
+            ph.textContent = 'Gruppe konnte nicht gelesen werden: ' + (e.message || e);
+            dl.style.display = 'none';
         }
     }
 
@@ -323,7 +399,10 @@
             el.classList.toggle('completed', s < step);
         });
         if (typeof window.ms365ApplyStepProgress === 'function') {
-            window.ms365ApplyStepProgress(document.querySelector('.gp-steps'), step, [1, 2, 3]);
+            window.ms365ApplyStepProgress(document.querySelector('.gp-steps'), step, [1, 2]);
+        }
+        if (step === 2) {
+            loadGroupDetailsIntoStep2().catch(function () {});
         }
     }
 
@@ -370,13 +449,20 @@
                         'Die Gruppe ist keine Sicherheitsgruppe (securityEnabled=false). Bitte eine reine Sicherheitsgruppe verwenden.'
                     );
                 }
+                if (g.mailEnabled) {
+                    throw new Error(
+                        'Die Gruppe ist mail-aktiviert (z. B. E-Mail-Sicherheitsgruppe). Für diese Richtlinie ist eine reine Sicherheitsgruppe erforderlich (mailEnabled=false).'
+                    );
+                }
                 setResolvedGroup(g.id, g.displayName);
                 appendLog('Gruppe per Object-ID geladen: ' + g.displayName + ' (' + g.id + ').', 'ok');
                 toast('Gruppe gefunden.');
             } else if (name) {
                 const list = await findSecurityGroupByDisplayName(token, name);
                 if (!list.length) {
-                    throw new Error('Keine Sicherheitsgruppe mit diesem Anzeigenamen gefunden.');
+                    throw new Error(
+                        'Keine passende reine Sicherheitsgruppe mit diesem Anzeigenamen gefunden (nur securityEnabled und ohne Mail-Aktivierung).'
+                    );
                 }
                 if (list.length > 1) {
                     appendLog('Mehrere Treffer – bitte Object-ID aus dem Admin Center kopieren.', 'warn');
@@ -400,7 +486,7 @@
         const hid = document.getElementById('gpResolvedObjectId');
         const gid = hid && hid.value ? hid.value.trim() : '';
         if (!guidLooksValid(gid)) {
-            toast('Bitte zuerst in Schritt 1 eine Sicherheitsgruppe wählen oder anlegen.');
+            toast('Bitte zuerst in Schritt 1 eine gültige reine Sicherheitsgruppe wählen oder anlegen.');
             return;
         }
         const btn = document.getElementById('gpBtnApply');
@@ -470,11 +556,16 @@
     }
 
     async function onRemoveClick() {
-        if (
-            !window.confirm(
-                'Die Verzeichniseinstellung Group.Unified wirklich entfernen? (Entspricht dem Entfernen per PowerShell; Mandant fällt auf Standard zurück.)'
-            )
-        ) {
+        const ok =
+            typeof window.ms365AppDialogConfirm === 'function'
+                ? await window.ms365AppDialogConfirm(
+                      'Die Verzeichniseinstellung Group.Unified wirklich entfernen? (Entspricht dem Entfernen per PowerShell; Mandant fällt auf Standard zurück.)',
+                      { title: 'Einstellung entfernen', okText: 'Entfernen', danger: true }
+                  )
+                : window.confirm(
+                      'Die Verzeichniseinstellung Group.Unified wirklich entfernen? (Entspricht dem Entfernen per PowerShell; Mandant fällt auf Standard zurück.)'
+                  );
+        if (!ok) {
             return;
         }
         const btn = document.getElementById('gpBtnRemove');
@@ -538,8 +629,10 @@
             const oid = document.getElementById('gpInputObjectId');
             if (dn && state.groupDisplayName !== undefined) dn.value = state.groupDisplayName;
             if (oid && state.groupObjectIdRaw !== undefined) oid.value = state.groupObjectIdRaw;
-            if (typeof state.gpCurrentStep === 'number' && state.gpCurrentStep >= 1 && state.gpCurrentStep <= 3) {
-                goToGpStep(state.gpCurrentStep);
+            if (typeof state.gpCurrentStep === 'number' && state.gpCurrentStep >= 1) {
+                let st = state.gpCurrentStep;
+                if (st > 2) st = 2;
+                goToGpStep(st);
             }
             if (state.resolvedObjectId && guidLooksValid(state.resolvedObjectId)) {
                 setResolvedGroup(state.resolvedObjectId, '');
@@ -588,14 +681,6 @@
         document.getElementById('gpBtnBack2') &&
             document.getElementById('gpBtnBack2').addEventListener('click', function () {
                 goToGpStep(1);
-            });
-        document.getElementById('gpBtnNext2') &&
-            document.getElementById('gpBtnNext2').addEventListener('click', function () {
-                goToGpStep(3);
-            });
-        document.getElementById('gpBtnBack3') &&
-            document.getElementById('gpBtnBack3').addEventListener('click', function () {
-                goToGpStep(2);
             });
 
         document.getElementById('gpBtnLogin') && document.getElementById('gpBtnLogin').addEventListener('click', onLoginClick);

@@ -11,7 +11,9 @@
     let pca = null;
 
     function toast(msg) {
-        if (typeof window.ms365ShowToast === 'function') {
+        if (typeof window.ms365ToastOrAlert === 'function') {
+            window.ms365ToastOrAlert(msg);
+        } else if (typeof window.ms365ShowToast === 'function') {
             window.ms365ShowToast(msg);
         } else {
             window.alert(msg);

@@ -19,7 +19,12 @@
             <p>Jahrgangsgruppen mit festem Namensschema (z. B. <code>jg2026-7a</code>) als Microsoft‑365‑Gruppen vorbereiten und per Microsoft Graph anlegen.</p>
             <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
-                <a class="btn" href="../index.html" style="text-decoration:none;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></div>
+                </div>
             </div>
         </div>
 
@@ -206,6 +211,7 @@
     <div id="toast" class="toast" role="status"></div>
 
     <script src="../ms365-config.js"></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
     <script src="../src/shared/school-domain.js" defer></script>
     <script src="../src/shared/tenant-settings-core.js" defer></script>
     <script src="../src/shared/tenant-settings-ui.js" defer></script>

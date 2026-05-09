@@ -21,7 +21,7 @@ window.MS365_MSAL_CONFIG = {
                 // Beispiele:
                 // - /ms365-schultools/tools/schulstruktur-sync.html  -> /ms365-schultools
                 // - /ms365-schultools/index.html                   -> /ms365-schultools
-                // - /tools/arge.html                               -> (root)
+                // - /tools/archiv/arge.html                        -> (root)
                 const p = String(window.location.pathname || '/');
                 const noQuery = p.split('?')[0].split('#')[0];
                 // Wenn wir in /tools/… sind, ist alles davor die "Basis"
@@ -49,6 +49,39 @@ window.MS365_MSAL_CONFIG = {
 
 (function () {
     if (typeof document === 'undefined') return;
+
+    function resolveSharedScriptPath() {
+        // Ziel: funktioniert in /tools/*.html, /tools/archiv/*.html und im Repo-Subpfad (GitHub Pages).
+        try {
+            const noQuery = String(window.location.pathname || '/').split('?')[0].split('#')[0];
+            const lower = noQuery.toLowerCase();
+            const idx = lower.indexOf('/tools/');
+            if (idx === -1) return 'src/shared/msal-auth-ui.js';
+            const afterTools = noQuery.slice(idx + '/tools/'.length);
+            const depth = Math.max(0, afterTools.split('/').length - 1);
+            return '../'.repeat(depth + 1) + 'src/shared/msal-auth-ui.js';
+        } catch {
+            return 'src/shared/msal-auth-ui.js';
+        }
+    }
+
+    function ensureGlobalAuthUi() {
+        // Auth-Widget auf allen Seiten einbinden (einmalig).
+        try {
+            if (document.getElementById('ms365GlobalAuthUiScript')) return;
+            if (typeof window.ms365AuthAcquireToken === 'function') return;
+            const already = document.querySelector('script[src*="msal-auth-ui"]');
+            if (already) return;
+            const s = document.createElement('script');
+            s.id = 'ms365GlobalAuthUiScript';
+            s.type = 'module';
+            s.src = resolveSharedScriptPath();
+            document.head.appendChild(s);
+        } catch {
+            // ignore
+        }
+    }
+
     function injectSiteCredit() {
         if (document.getElementById('siteCreditKurtrocks')) return;
         const p = document.createElement('p');
@@ -67,6 +100,13 @@ window.MS365_MSAL_CONFIG = {
         p.appendChild(a);
         document.body.appendChild(p);
     }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectSiteCredit);
-    else injectSiteCredit();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            ensureGlobalAuthUi();
+            injectSiteCredit();
+        });
+    } else {
+        ensureGlobalAuthUi();
+        injectSiteCredit();
+    }
 })();

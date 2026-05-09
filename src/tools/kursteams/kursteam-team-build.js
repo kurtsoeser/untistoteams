@@ -32,7 +32,17 @@
                       gruppe: row.gruppe
                   })
                 : `${yearPrefix}${separator}${klasseForName}${separator}${row.fach}`;
-            const gruppenmailRaw = buildGruppenmailBase(yearPrefix, klasseForName, row.fach, row.gruppe).replace(/\s+/g, '-');
+            let klasseForGruppenmail = klasseForName;
+            try {
+                const adv = window.ms365AppDataV2;
+                if (adv && typeof adv.getClassTeamGruppenmailForKlasse === 'function') {
+                    const stable = adv.getClassTeamGruppenmailForKlasse(row.klasse);
+                    if (stable) klasseForGruppenmail = stable;
+                }
+            } catch {
+                // ignore
+            }
+            const gruppenmailRaw = buildGruppenmailBase(yearPrefix, klasseForGruppenmail, row.fach, row.gruppe).replace(/\s+/g, '-');
 
             const originalGruppenmail = gruppenmailRaw;
             let gruppenmail = gruppenmailRaw.replace(INVALID_CHARS_REPLACE, '');

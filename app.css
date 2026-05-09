@@ -16,6 +16,10 @@
     --soft: #f8f9fa;
     --icon-muted: rgba(255, 255, 255, 0.92);
     --icon-dim: rgba(33, 37, 41, 0.72);
+
+    /* Layout */
+    --app-max-width: 1400px;
+    --app-page-padding: 24px;
 }
 
 * {
@@ -28,17 +32,23 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
     min-height: 100vh;
-    padding: 20px;
+    padding: var(--app-page-padding);
     color: var(--text);
 }
 
 .container {
-    max-width: 1400px;
+    max-width: var(--app-max-width);
     margin: 0 auto;
     background: var(--card);
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
+}
+
+/* Kompatibilität: einige Seiten nutzen "page-card" als Layout-Wrap */
+.page-card {
+    max-width: var(--app-max-width);
+    margin: 0 auto;
 }
 
 .header {
@@ -233,6 +243,23 @@ body {
     text-align: center;
     font-size: 1.35em;
     font-weight: 900;
+}
+
+/* Toolname + Icon: konsistente Typografie/Spacing */
+.header-tool-indicator__name {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.header-tool-indicator__name > i.bi {
+    margin: 0;
+    font-size: 3.75em;
+    line-height: 1;
+    opacity: 0.95;
+    pointer-events: none;
+    display: block;
 }
 
 .steps .step .bi {
@@ -735,7 +762,69 @@ input[type="file"] { display: none; }
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
 }
 .modal-box h3 { margin-bottom: 16px; color: #32325d; }
-.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+
+/* Zentrierte App-Dialoge (ms365AppDialog*) */
+#ms365AppDialog.modal-overlay,
+.ms365-app-dialog-overlay {
+    z-index: 10050;
+    backdrop-filter: blur(4px);
+}
+#ms365AppDialog .ms365-app-dialog-box {
+    max-width: 520px;
+    animation: ms365AppDialogIn 0.2s ease-out;
+}
+@keyframes ms365AppDialogIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+#ms365AppDialog .app-dialog-title {
+    margin: 0 0 10px;
+    font-size: 1.18rem;
+    font-weight: 900;
+    color: #32325d;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+}
+#ms365AppDialog .app-dialog-message {
+    margin: 0;
+    line-height: 1.55;
+    color: #495057;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+#ms365AppDialog .app-dialog-prompt {
+    margin-top: 16px;
+}
+#ms365AppDialog .app-dialog-input-label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-weight: 700;
+    color: #32325d;
+    font-size: 0.95rem;
+}
+#ms365AppDialog .app-dialog-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    color: var(--text);
+    background: #fff;
+    box-sizing: border-box;
+}
+#ms365AppDialog .app-dialog-input:focus {
+    outline: 2px solid rgba(94, 114, 228, 0.45);
+    outline-offset: 1px;
+    border-color: var(--brand1);
+}
 
 /* Schritt-Navigation: Zurück links, Weiter rechts (eine Zeile pro Block) */
 .step-nav-row {

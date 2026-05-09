@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
+    <title>MS365-Schulverwaltung – ARGEs (Archiv)</title>
+    <link rel="stylesheet" href="../../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-archive"></i>ARGEs <span style="font-weight:600;opacity:0.85;">(Archiv)</span></span>
+            </div>
+            <p>Legacy‑Assistent: Arbeitsgemeinschaften als Microsoft‑365‑Gruppen planen (Besitzer, Mitglieder, Skript). Für die übliche Einrichtung reichen <a href="../../einrichtung.html">Geführte Einrichtung</a> (Schritt 7) und <a href="../../tenant.html">Schul‑Grundeinstellungen</a> → ARGE.</p>
+            <p class="header-help-row"><a href="../../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="../../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panelArge">
+            <div class="steps arge-steps">
+                <div class="step active" data-arge-step="1"><i class="bi bi-list-ul"></i>1. ARGE-Liste</div>
+                <div class="step" data-arge-step="2"><i class="bi bi-person-badge"></i>2. Besitzer</div>
+                <div class="step" data-arge-step="3"><i class="bi bi-people"></i>3. Mitglieder</div>
+                <div class="step" data-arge-step="4"><i class="bi bi-sliders2"></i>4. Einstellungen</div>
+                <div class="step" data-arge-step="5"><i class="bi bi-play-circle"></i>5. Ausführen</div>
+            </div>
+            <div class="content">
+                <div class="arge-step-content active" data-arge-step="1">
+                    <h2>ARGE-Liste</h2>
+                    <div class="alert alert-info">
+                        <strong>Einfach einfügen:</strong> eine Zeile pro Fach oder Stichwort. Daraus wird der <strong>Anzeigename</strong> (<code>ARGE …</code>) und das <strong>Mail-Nickname</strong> erzeugt.
+                    </div>
+                    <div class="alert alert-warning" style="margin-top:10px;">
+                        <strong>Optional (fortgeschritten):</strong> weiterhin <code>Anzeigename;MailNickname</code> pro Zeile möglich.
+                    </div>
+                    <div class="arge-step1-grid">
+                        <div class="arge-step1-prefix">
+                            <div class="filter-group">
+                                <label for="argeDefaultPrefix">Präfix für Mail-Nickname (Standard: <code>arge</code>)</label>
+                                <input type="text" id="argeDefaultPrefix" placeholder="leer = arge (z.B. arge, ag, arge-htl …)" value="" maxlength="20" autocomplete="off">
+                            </div>
+                            <div class="filter-group" style="margin-top:4px;">
+                                <label class="checkbox-label" for="argeUpperNick">
+                                    <input type="checkbox" id="argeUpperNick">
+                                    <span>Mail-Nickname groß schreiben (z. B. <code>ARGEBB</code>)</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="filter-group arge-step1-lines">
+                            <label for="argeLines">Fächer / Bezeichnungen (eine Zeile pro ARGE)</label>
+                            <textarea id="argeLines" rows="8" style="width:100%;padding:12px;font-family:Consolas,monospace;border:1px solid #ced4da;border-radius:8px;" placeholder="Deutsch&#10;Englisch&#10;Mathematik"></textarea>
+                        </div>
+                    </div>
+                    <h3 style="margin-top:16px;font-size:1rem;">Vorschau</h3>
+                    <p style="margin:0 0 10px 0;">
+                        <button type="button" class="btn btn-small" id="argePreviewAddRow"><i class="bi bi-plus-circle"></i>Zeile hinzufügen</button>
+                    </p>
+                    <div class="table-container" style="max-height:280px;margin-bottom:12px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Anzeigename (Gruppe)</th>
+                                    <th>Kürzel</th>
+                                    <th>Fach (technisch)</th>
+                                    <th>Mail-Nickname</th>
+                                    <th>E-Mail (Vorschau)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="argePreviewBody">
+                                <tr><td colspan="5" style="color:#6c757d;">Noch keine Zeilen – oben Fächer einfügen.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="argeParseError" class="alert alert-warning" style="display:none;"></p>
+                    <div class="step-nav-row step-nav-row--forward-only">
+                        <button type="button" class="btn btn-success" id="argeParseAndGo3"><i class="bi bi-arrow-right-circle"></i>Weiter zu Besitzern</button>
+                    </div>
+                </div>
+
+                <div class="arge-step-content" data-arge-step="2">
+                    <h2>Besitzer (Lehrkräfte)</h2>
+                    <div class="alert alert-info">
+                        <strong>Microsoft Graph:</strong> Besitzer müssen als Benutzer im Mandanten existieren (UPN).
+                    </div>
+                    <div class="table-container" style="max-height:420px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Anzeigename</th>
+                                    <th>Kürzel</th>
+                                    <th>Gruppen-E-Mail (Vorschau)</th>
+                                    <th>Mail-Nickname</th>
+                                    <th>Besitzer (UPN)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="argeOwnerBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="step-nav-row">
+                        <button type="button" class="btn" id="argeBack1"><i class="bi bi-arrow-left"></i>Zurück</button>
+                        <button type="button" class="btn btn-success" id="argeGoTo3"><i class="bi bi-arrow-right-circle"></i>Weiter zu Mitglieder</button>
+                    </div>
+                </div>
+
+                <div class="arge-step-content" data-arge-step="3">
+                    <h2>Mitglieder (optional, pro Gruppe)</h2>
+                    <div class="alert alert-info">
+                        <strong>Optional:</strong> Pro ARGE-Gruppe eine Liste: <strong>UPN/E-Mail, eine pro Zeile</strong>.
+                    </div>
+                    <div class="table-container" style="max-height:480px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="min-width:140px;">Anzeigename</th>
+                                    <th style="min-width:72px;">Kürzel</th>
+                                    <th style="min-width:180px;">Gruppen-E-Mail (Vorschau)</th>
+                                    <th>Mitglieder (eine Zeile pro UPN)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="argeMembersBody"></tbody>
+                        </table>
+                    </div>
+                    <small style="color:#6c757d;display:block;margin-top:10px;line-height:1.45;">Leere Zeilen und Zeilen mit <code>#</code> am Anfang werden ignoriert.</small>
+                    <div class="step-nav-row">
+                        <button type="button" class="btn" id="argeMemberBack"><i class="bi bi-arrow-left"></i>Zurück</button>
+                        <button type="button" class="btn btn-success" id="argeMemberNext"><i class="bi bi-arrow-right-circle"></i>Weiter zu Einstellungen</button>
+                    </div>
+                </div>
+
+                <div class="arge-step-content" data-arge-step="4">
+                    <h2>ARGEs: Einstellungen</h2>
+                    <div class="filter-section" style="padding-top:4px;">
+                        <div style="display:flex;flex-direction:column;gap:16px;">
+                            <label class="checkbox-label" for="argeExchangeSmtp" style="align-items:flex-start;">
+                                <input type="checkbox" id="argeExchangeSmtp" checked>
+                                <span style="flex:1;">Primäre Gruppen-E-Mail per Exchange setzen (<code>nickname@Schuldomain</code>)</span>
+                            </label>
+                            <label class="checkbox-label" for="argeCreateTeams" style="align-items:flex-start;">
+                                <input type="checkbox" id="argeCreateTeams" checked>
+                                <span style="flex:1;">Microsoft Teams an jede Gruppe anbinden</span>
+                            </label>
+                            <label class="checkbox-label" for="argeAdminAsOwner" style="align-items:flex-start;">
+                                <input type="checkbox" id="argeAdminAsOwner" checked>
+                                <span style="flex:1;">Ausführender Administrator als Besitzer (zusätzlich)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="step-nav-row">
+                        <button type="button" class="btn" id="argeBack2"><i class="bi bi-arrow-left"></i>Zurück</button>
+                        <button type="button" class="btn btn-success" id="argeGoTo4"><i class="bi bi-arrow-right-circle"></i>Weiter zu Ausführen</button>
+                    </div>
+                </div>
+
+                <div class="arge-step-content" data-arge-step="5">
+                    <h2>Ausführen (Online oder PowerShell)</h2>
+                    <div class="filter-section" style="margin-bottom:20px;border:1px solid #dee2e6;border-radius:8px;padding:16px;background:#f8f9fa;">
+                        <h3 style="margin-top:0;">Microsoft Graph im Browser</h3>
+                        <button type="button" class="btn" id="argeOnlineLogin" onclick="window.ms365ArgeGraphLogin && window.ms365ArgeGraphLogin()"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
+                        <button type="button" class="btn btn-success" id="argeOnlineRun" onclick="window.ms365ArgeGraphRun && window.ms365ArgeGraphRun()" style="margin-left:8px;"><i class="bi bi-play-fill"></i>ARGE Gruppen jetzt anlegen</button>
+                        <div id="argeOnlineLog" style="margin-top:14px;max-height:220px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;line-height:1.45;"></div>
+                    </div>
+                    <h3>Generiertes Script</h3>
+                    <div class="powershell-code">
+                        <button type="button" class="btn btn-small copy-btn" id="argeCopyScript"><i class="bi bi-clipboard"></i>Kopieren</button>
+                        <pre id="argePowerShellScript"></pre>
+                    </div>
+                    <div class="filter-section">
+                        <h3>Fertiges Paket zum Doppelklicken</h3>
+                        <p style="color:#495057;margin-bottom:12px;">Lädt <strong>eine</strong> Datei <strong>ARGE-Gruppen-Anlage.cmd</strong> (PowerShell eingebettet).</p>
+                        <button type="button" class="btn btn-success" onclick="downloadArgeStandalonePackage()"><i class="bi bi-box-seam"></i>ARGE-Gruppen-Anlage.cmd herunterladen</button>
+                    </div>
+                    <div class="step-nav-row step-nav-row--back-only">
+                        <button type="button" class="btn" id="argeBack3"><i class="bi bi-arrow-left"></i>Zurück</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="toolbar bottom-toolbar" aria-label="Zwischenstand">
+            <button type="button" class="btn" id="btnSaveState"><i class="bi bi-floppy"></i>Zwischenstand speichern</button>
+            <button type="button" class="btn" id="btnLoadState"><i class="bi bi-folder2-open"></i>Gespeicherten Stand laden</button>
+            <button type="button" class="btn" id="btnExportArgeJson"><i class="bi bi-download"></i>Export JSON</button>
+            <button type="button" class="btn" id="btnImportArgeJson"><i class="bi bi-upload"></i>Import JSON</button>
+            <button type="button" class="btn" id="btnExportArgeCsv"><i class="bi bi-download"></i>Export CSV</button>
+            <button type="button" class="btn" id="btnImportArgeCsv"><i class="bi bi-upload"></i>Import CSV</button>
+            <button type="button" class="btn btn-danger" id="btnClearStorage"><i class="bi bi-trash"></i>Lokalen Speicher löschen</button>
+        </div>
+        <input type="file" id="argeImportJsonFile" accept="application/json,.json" style="display:none;">
+        <input type="file" id="argeImportCsvFile" accept="text/csv,.csv,text/plain" style="display:none;">
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <script src="../../ms365-config.js"></script>
+    <script src="../../src/shared/app-dialog.js" defer></script>
+    <script src="../../src/shared/school-domain.js" defer></script>
+    <script src="../../src/shared/tenant-settings-core.js" defer></script>
+    <script src="../../src/shared/tenant-settings-ui.js" defer></script>
+    <script src="../../src/shared/polyglot-cmd.js" defer></script>
+    <script src="../../src/shared/step-progress.js" defer></script>
+    <script src="../../src/tools/arge/arge-standalone-ps1.js" defer></script>
+    <script src="../../src/tools/arge/arge-csv.js" defer></script>
+    <script src="../../src/tools/arge/arge-parse.js" defer></script>
+    <script src="../../src/tools/arge/arge-state.js" defer></script>
+    <script src="../../src/tools/arge/arge.js" defer></script>
+    <script src="../../src/tools/arge/arge-graph.js" defer></script>
+</body>
+</html>

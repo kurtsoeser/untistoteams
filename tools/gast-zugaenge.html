@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Gast-Zugänge &amp; Externe</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px 22px; }
+        .muted { color: var(--muted); }
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+            margin-bottom: 14px;
+        }
+        .gz-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .gz-toolbar .btn { margin: 0; }
+        .gz-table-wrap { overflow: auto; max-height: 48vh; border: 1px solid var(--border); border-radius: 12px; }
+        table.gz-table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+        table.gz-table th, table.gz-table td { padding: 8px 10px; border-bottom: 1px solid #f0f1f3; text-align: left; vertical-align: top; }
+        table.gz-table th { background: #fafbff; font-weight: 800; color: #32325d; position: sticky; top: 0; z-index: 1; }
+    </style>
+</head>
+<body data-ms365-skip-tenant-domain-prompt="true">
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-person-plus"></i>Gast-Zugänge &amp; Externe</span>
+            </div>
+            <p>Lesender Überblick für Audits: Teams mit Gast-Benutzerkonten in der Mitgliedschaft sowie (sofern berechtigt) protokollierte B2B-/Gast-Einladungen aus dem <strong>Verzeichnis-Audit</strong> (Microsoft Graph). Es werden keine Änderungen am Tenant vorgenommen.</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;">
+                    <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <section class="panel" aria-label="Teams mit Gästen">
+                <div class="panel-head">
+                    <h2><i class="bi bi-microsoft-teams" style="margin-right:10px;"></i>Teams mit Gast-Mitgliedern</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="hint">
+                        <strong>DSGVO / Aufbewahrung:</strong> Gast-UPNs und Namen sind personenbezogen; Exporte nur speichern, wenn Ihre Organisation das erlaubt. Delegierte Graph-Berechtigungen: mindestens <code>Group.Read.All</code> für die Teamliste; für den B2B-Block zusätzlich <code>AuditLog.Read.All</code> (Audit: u. a. „Invite external user“ – Microsoft Graph bietet keinen lesbaren Sammel-Endpunkt <code>GET /invitations</code>). Der angemeldete Benutzer braucht dafür typischerweise eine Berichts-/Security-Lese-Rolle in Entra. Nach einem erfolgreichen Abruf werden die Tabellen in dieser <strong>Browser-Tab-Sitzung</strong> zwischengespeichert (<code>sessionStorage</code>) und bei erneutem Öffnen der Seite wieder angezeigt, bis das Tab geschlossen wird.
+                    </div>
+                    <div class="gz-toolbar">
+                        <button type="button" class="btn btn-success" id="gzBtnRun"><i class="bi bi-cloud-download"></i>Daten laden</button>
+                        <button type="button" class="btn" id="gzBtnCsvTeams" disabled><i class="bi bi-download"></i>CSV Teams</button>
+                        <button type="button" class="btn" id="gzBtnCsvInv" disabled><i class="bi bi-download"></i>CSV Einladungen</button>
+                    </div>
+                    <div id="gzProgress" class="hint" style="display:none; margin-bottom:12px;"></div>
+                    <div class="gz-table-wrap">
+                        <table class="gz-table" aria-label="Teams mit Gästen">
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>E-Mail der Gruppe</th>
+                                    <th>Anzahl Gäste</th>
+                                    <th>Gäste (Auszug)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gzTbodyTeams"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" aria-label="B2B Einladungen Audit">
+                <div class="panel-head">
+                    <h2><i class="bi bi-envelope-open" style="margin-right:10px;"></i>B2B-/Gast-Einladungen (Verzeichnis-Audit)</h2>
+                </div>
+                <div class="panel-body">
+                    <p id="gzInvNote" class="muted" style="margin:0 0 10px; line-height:1.45;"></p>
+                    <div class="gz-table-wrap">
+                        <table class="gz-table" aria-label="B2B Einladungen Verzeichnis Audit">
+                            <thead>
+                                <tr>
+                                    <th>E-Mail / UPN</th>
+                                    <th>Zeitpunkt · Ergebnis</th>
+                                    <th>Name / Kontext</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gzTbodyInv"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script type="module" src="../src/shared/msal-auth-ui.js"></script>
+    <script src="../src/tools/gast-zugaenge/gast-zugaenge.js" defer></script>
+</body>
+</html>

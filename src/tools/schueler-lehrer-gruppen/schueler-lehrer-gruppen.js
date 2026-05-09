@@ -31,6 +31,8 @@
             toast._t = setTimeout(function () {
                 el.classList.remove('show');
             }, 3800);
+        } else if (typeof window.ms365ToastOrAlert === 'function') {
+            window.ms365ToastOrAlert(msg);
         } else if (typeof window.ms365ShowToast === 'function') {
             window.ms365ShowToast(msg);
         } else {
@@ -138,11 +140,18 @@
         });
     }
 
-    async function graphRequest(method, path, token, body) {
+    async function graphRequest(method, path, token, body, extraHeaders) {
         const url = path.indexOf('http') === 0 ? path : 'https://graph.microsoft.com/v1.0' + path;
         let attempt = 0;
         while (true) {
             const headers = { Authorization: 'Bearer ' + token };
+            if (extraHeaders && typeof extraHeaders === 'object') {
+                for (const k in extraHeaders) {
+                    if (Object.prototype.hasOwnProperty.call(extraHeaders, k)) {
+                        headers[k] = extraHeaders[k];
+                    }
+                }
+            }
             if (body !== undefined) {
                 headers['Content-Type'] = 'application/json';
             }
@@ -161,8 +170,8 @@
         }
     }
 
-    async function graphJson(method, path, token, body) {
-        const res = await graphRequest(method, path, token, body);
+    async function graphJson(method, path, token, body, extraHeaders) {
+        const res = await graphRequest(method, path, token, body, extraHeaders);
         const text = await res.text();
         let data = null;
         if (text) {
@@ -261,6 +270,28 @@
         return out;
     }
 
+    /** Rollen aus Schul‑Einstellungen → Verwaltung, die als M365‑Gruppenbesitzer (Direktion) gelten. */
+    function isDirektionRole(roleRaw) {
+        const r = normStr(roleRaw).toLowerCase();
+        if (!r) return false;
+        return r.indexOf('direktion') !== -1 || r.indexOf('direktor') !== -1;
+    }
+
+    function collectDirektionOwnerEmails(settings) {
+        const out = [];
+        const seen = new Set();
+        const admin = settings && Array.isArray(settings.admin) ? settings.admin : [];
+        admin.forEach(function (row) {
+            if (!isDirektionRole(row && row.role)) return;
+            const em = normEmail(row && row.email);
+            if (!em || em.indexOf('@') === -1) return;
+            if (seen.has(em)) return;
+            seen.add(em);
+            out.push(em);
+        });
+        return out;
+    }
+
     function countStudentsWithAnyData(settings) {
         const students = settings && Array.isArray(settings.students) ? settings.students : [];
         let n = 0;
@@ -306,6 +337,12 @@
             if (!domain) lines.push('Bitte in den Schul‑Einstellungen eine Schul‑Domain eintragen (für die Adress‑Vorschau).');
             if (!studEmails.length) lines.push('Keine Schüler:innen mit E‑Mail in der Liste – Schritt 3 kann dort nichts übernehmen.');
             if (!teachEmails.length) lines.push('Keine Lehrer:innen mit E‑Mail in der Liste – Schritt 3 kann dort nichts übernehmen.');
+            const dirEm = collectDirektionOwnerEmails(settings);
+            if (!dirEm.length) {
+                lines.push(
+                    'In der Verwaltungsliste ist keine Rolle „Direktion“ (o. Ä.) mit E‑Mail hinterlegt – beim Anlegen der Gruppen wird sonst der angemeldete Benutzer als Besitzer gesetzt.'
+                );
+            }
             warn.style.display = lines.length ? 'block' : 'none';
             warn.innerHTML = lines.length ? '<strong>Hinweis:</strong> ' + lines.join(' ') : '';
         }
@@ -394,6 +431,64 @@
         return data.value || [];
     }
 
+    function escapeSearchPhrase(raw) {
+        return String(raw || '')
+            .replace(/"/g, '\\"')
+            .replace(/\r?\n/g, ' ')
+            .trim();
+    }
+
+    async function searchUnifiedGroups(token, queryRaw) {
+        const q = normStr(queryRaw);
+        if (!q) return [];
+
+        // 1) Volltextsuche (intuitiver): displayName, mail, mailNickname, description.
+        // Graph benötigt dafür ConsistencyLevel: eventual.
+        try {
+            const phrase = escapeSearchPhrase(q);
+            const aqs =
+                '(displayName:' +
+                phrase +
+                ' OR mail:' +
+                phrase +
+                ' OR mailNickname:' +
+                phrase +
+                ' OR description:' +
+                phrase +
+                ')';
+            const path =
+                '/groups?$search=' +
+                encodeURIComponent('"' + aqs + '"') +
+                '&$select=' +
+                encodeURIComponent('id,displayName,mail,mailNickname,groupTypes,description') +
+                '&$top=25';
+            const data = await graphJson('GET', path, token, undefined, { ConsistencyLevel: 'eventual' });
+            const list = (data && data.value) || [];
+            return list.filter(isUnifiedGroup);
+        } catch {
+            // 2) Fallback: StartsWith-Filter (funktioniert auch ohne ConsistencyLevel)
+        }
+
+        const esc = odataEscape(q);
+        const filter =
+            "groupTypes/any(c:c eq 'Unified') and (" +
+            "startswith(displayName,'" +
+            esc +
+            "') or startswith(mailNickname,'" +
+            esc +
+            "') or startswith(mail,'" +
+            esc +
+            "') )";
+        const path =
+            '/groups?$filter=' +
+            encodeURIComponent(filter) +
+            '&$select=' +
+            encodeURIComponent('id,displayName,mail,mailNickname,groupTypes') +
+            '&$top=25';
+        const data = await graphJson('GET', path, token, undefined);
+        return data.value || [];
+    }
+
     function normalizeGroupQueryToNickOrMail(raw) {
         const q = normStr(raw);
         if (!q) return { nick: '', mail: '' };
@@ -419,23 +514,52 @@
         const group = await graphJson('POST', '/groups', token, body);
         const gid = group.id;
         await sleep(1500);
+        let direktionOwnersAdded = 0;
+        try {
+            const settings = loadTenantSettings();
+            const dirEmails = collectDirektionOwnerEmails(settings);
+            for (let i = 0; i < dirEmails.length; i++) {
+                const em = dirEmails[i];
+                try {
+                    const u = await resolveUserByEmail(token, em);
+                    if (!u || !u.id) continue;
+                    try {
+                        await graphJson('POST', '/groups/' + encodeURIComponent(gid) + '/owners/$ref', token, {
+                            '@odata.id': userRef(u.id)
+                        });
+                        direktionOwnersAdded++;
+                    } catch (e) {
+                        if (!isDuplicateMemberError(e)) {
+                            /* einzelne Owner-Fehler nicht fatal */
+                        }
+                    }
+                } catch {
+                    /* ignore */
+                }
+                if ((i + 1) % 6 === 0) await sleep(120);
+            }
+        } catch {
+            /* Direktion optional */
+        }
         try {
             const me = await graphJson('GET', '/me', token, undefined);
             const meId = me && me.id;
             if (meId) {
-                try {
-                    await graphJson('POST', '/groups/' + gid + '/owners/$ref', token, {
-                        '@odata.id': userRef(meId)
-                    });
-                } catch (e) {
-                    if (!isDuplicateMemberError(e)) throw e;
-                }
-                try {
-                    await graphJson('POST', '/groups/' + gid + '/members/$ref', token, {
-                        '@odata.id': userRef(meId)
-                    });
-                } catch (e) {
-                    if (!isDuplicateMemberError(e)) throw e;
+                if (direktionOwnersAdded === 0) {
+                    try {
+                        await graphJson('POST', '/groups/' + encodeURIComponent(gid) + '/owners/$ref', token, {
+                            '@odata.id': userRef(meId)
+                        });
+                    } catch (e) {
+                        if (!isDuplicateMemberError(e)) throw e;
+                    }
+                    try {
+                        await graphJson('POST', '/groups/' + encodeURIComponent(gid) + '/members/$ref', token, {
+                            '@odata.id': userRef(meId)
+                        });
+                    } catch (e) {
+                        if (!isDuplicateMemberError(e)) throw e;
+                    }
                 }
             }
         } catch (e) {
@@ -510,6 +634,39 @@
         );
     }
 
+    async function ensureDirektionOwnersOnGroup(token, groupId, logLabel) {
+        const label = logLabel || 'Besitzer (Direktion)';
+        const emails = collectDirektionOwnerEmails(loadTenantSettings());
+        let ok = 0;
+        for (let i = 0; i < emails.length; i++) {
+            const em = emails[i];
+            try {
+                const u = await resolveUserByEmail(token, em);
+                if (!u || !u.id) {
+                    appendSyncLog(label + ': Kein Benutzer für ' + em, 'warn');
+                    continue;
+                }
+                try {
+                    await graphJson('POST', '/groups/' + encodeURIComponent(groupId) + '/owners/$ref', token, {
+                        '@odata.id': userRef(u.id)
+                    });
+                    ok++;
+                    appendSyncLog(label + ': ' + em + ' → Besitzer', 'ok');
+                } catch (e) {
+                    if (isDuplicateMemberError(e)) {
+                        appendSyncLog(label + ': ' + em + ' (war schon Besitzer)', 'warn');
+                    } else {
+                        appendSyncLog(label + ': ' + em + ' — ' + (e.message || e), 'err');
+                    }
+                }
+            } catch (e) {
+                appendSyncLog(label + ': ' + em + ' — ' + (e.message || e), 'err');
+            }
+            if ((i + 1) % 6 === 0) await sleep(120);
+        }
+        return ok;
+    }
+
     function appendSyncLog(msg, kind) {
         const el = document.getElementById('slgSyncLog');
         if (!el) return;
@@ -575,6 +732,128 @@
             unified +
             '</span>'
         );
+    }
+
+    function clearSearchResults(kind) {
+        const el = document.getElementById(kind === 'schueler' ? 'slgSchuelerSearchResults' : 'slgLehrerSearchResults');
+        if (!el) return;
+        el.style.display = 'none';
+        el.replaceChildren();
+    }
+
+    function renderSearchResults(kind, list) {
+        const el = document.getElementById(kind === 'schueler' ? 'slgSchuelerSearchResults' : 'slgLehrerSearchResults');
+        if (!el) return;
+        el.replaceChildren();
+
+        const box = document.createElement('div');
+        box.style.border = '1px solid #ced4da';
+        box.style.borderRadius = '10px';
+        box.style.background = '#fff';
+        box.style.overflow = 'hidden';
+
+        const head = document.createElement('div');
+        head.style.padding = '10px 12px';
+        head.style.background = '#f8f9fa';
+        head.style.display = 'flex';
+        head.style.alignItems = 'center';
+        head.style.justifyContent = 'space-between';
+        head.style.gap = '10px';
+        head.innerHTML =
+            '<strong>Treffer</strong> <span style="color:#6c757d;font-size:0.9em;">' +
+            String(list.length) +
+            '</span>';
+
+        const btnClose = document.createElement('button');
+        btnClose.type = 'button';
+        btnClose.className = 'btn';
+        btnClose.textContent = 'Schließen';
+        btnClose.addEventListener('click', function () {
+            clearSearchResults(kind);
+        });
+        head.appendChild(btnClose);
+
+        box.appendChild(head);
+
+        const body = document.createElement('div');
+        body.style.maxHeight = '240px';
+        body.style.overflow = 'auto';
+
+        if (!list.length) {
+            const empty = document.createElement('div');
+            empty.style.padding = '10px 12px';
+            empty.style.color = '#6c757d';
+            empty.textContent = 'Keine passenden Microsoft 365‑Gruppen (Unified) gefunden.';
+            body.appendChild(empty);
+        } else {
+            list.forEach(function (g, idx) {
+                const row = document.createElement('div');
+                row.style.display = 'grid';
+                row.style.gridTemplateColumns = '1fr auto';
+                row.style.gap = '10px';
+                row.style.padding = '10px 12px';
+                row.style.borderTop = idx === 0 ? '0' : '1px solid #eef1f4';
+                row.style.alignItems = 'center';
+
+                const left = document.createElement('div');
+                const dn = normStr(g && g.displayName) || '(ohne Namen)';
+                const mail = normStr(g && g.mail) || '–';
+                const nick = normStr(g && g.mailNickname) || '–';
+                left.innerHTML =
+                    '<div style="font-weight:600;line-height:1.25;">' +
+                    escapeHtml(dn) +
+                    '</div>' +
+                    '<div style="color:#6c757d;font-size:0.9em;line-height:1.35;">' +
+                    'Mail‑Nickname: <code>' +
+                    escapeHtml(nick) +
+                    '</code> · SMTP: ' +
+                    escapeHtml(mail) +
+                    '</div>' +
+                    '<div style="color:#6c757d;font-size:0.85em;line-height:1.35;">' +
+                    'Object‑ID: <code>' +
+                    escapeHtml(g && g.id ? g.id : '') +
+                    '</code>' +
+                    '</div>';
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-success';
+                btn.textContent = 'Übernehmen';
+                btn.addEventListener('click', function () {
+                    const inp = document.getElementById(kind === 'schueler' ? 'slgSchuelerGroupId' : 'slgLehrerGroupId');
+                    if (inp && g && g.id) inp.value = String(g.id);
+                    persistResolvedIds(kind, g);
+                    setSummary(kind, formatGroupSummary(g), true);
+                    clearSearchResults(kind);
+                    toast('Gruppe übernommen.');
+                });
+
+                row.appendChild(left);
+                row.appendChild(btn);
+                body.appendChild(row);
+            });
+        }
+
+        box.appendChild(body);
+        el.appendChild(box);
+        el.style.display = 'block';
+    }
+
+    async function handleSearchExistingGroups(kind) {
+        try {
+            const token = await getGraphToken();
+            const qEl = document.getElementById(kind === 'schueler' ? 'slgSchuelerGroupQuery' : 'slgLehrerGroupQuery');
+            const q = qEl ? qEl.value : '';
+            if (!normStr(q)) {
+                toast('Bitte oben eine Suche eingeben (Name, Mail‑Nickname oder Gruppen‑E‑Mail).');
+                return;
+            }
+            const list = await searchUnifiedGroups(token, q);
+            renderSearchResults(kind, list);
+            if (!list.length) toast('Keine passenden Gruppen gefunden.');
+        } catch (e) {
+            toast('Fehler: ' + (e.message || e));
+        }
     }
 
     async function handleCreateSchueler() {
@@ -822,6 +1101,7 @@
                 'Fertig Schüler:innen: neu ' + r.ok + ', übersprungen ' + r.skip + ', Fehler ' + r.fail + '.',
                 'ok'
             );
+            await ensureDirektionOwnersOnGroup(token, resolvedSchuelerId, 'Schüler‑Gruppe Besitzer');
             toast('Synchronisation Schüler:innen abgeschlossen.');
         } catch (e) {
             appendSyncLog('Abbruch: ' + (e.message || e), 'err');
@@ -849,6 +1129,7 @@
                 'Fertig Lehrer:innen: neu ' + r.ok + ', übersprungen ' + r.skip + ', Fehler ' + r.fail + '.',
                 'ok'
             );
+            await ensureDirektionOwnersOnGroup(token, resolvedLehrerId, 'Lehrer‑Gruppe Besitzer');
             toast('Synchronisation Lehrer:innen abgeschlossen.');
         } catch (e) {
             appendSyncLog('Abbruch: ' + (e.message || e), 'err');
@@ -1132,6 +1413,14 @@
         document.getElementById('slgBtnFindLehrerNick') &&
             document.getElementById('slgBtnFindLehrerNick').addEventListener('click', function () {
                 handleFindLehrerNick();
+            });
+        document.getElementById('slgBtnSearchSchuelerGroups') &&
+            document.getElementById('slgBtnSearchSchuelerGroups').addEventListener('click', function () {
+                handleSearchExistingGroups('schueler');
+            });
+        document.getElementById('slgBtnSearchLehrerGroups') &&
+            document.getElementById('slgBtnSearchLehrerGroups').addEventListener('click', function () {
+                handleSearchExistingGroups('lehrer');
             });
 
         document.querySelectorAll('input[name="slgSchuelerMode"]').forEach(function (r) {

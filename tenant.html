@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
     <title>MS365-Schulverwaltung – Schul-Grundeinstellungen</title>
     <link rel="stylesheet" href="app.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        .page-card {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+        /* Layout-Breite ist zentral in app.css definiert (page-card/container) */
 
         .settings {
             margin: 18px auto 0;
@@ -221,6 +219,14 @@
             font-weight: 900;
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(50, 50, 93, 0.06);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn > i {
+            font-size: 1.08rem;
+            flex-shrink: 0;
+            opacity: 0.95;
         }
         .tab-btn[aria-selected="true"] {
             background: linear-gradient(135deg, var(--brand1) 0%, var(--brand2) 100%);
@@ -228,12 +234,182 @@
             color: #fff;
             box-shadow: 0 10px 24px rgba(94, 114, 228, 0.25);
         }
+        .tab-btn[aria-selected="true"] > i {
+            opacity: 1;
+        }
         .tab-panel {
             display: none;
             margin-top: 12px;
         }
         .tab-panel.active {
             display: block;
+        }
+
+        /* Schritte (Accordion) */
+        .ts-step {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #fff;
+            overflow: hidden;
+            box-shadow: 0 10px 26px rgba(50, 50, 93, 0.08);
+        }
+        .ts-step + .ts-step { margin-top: 16px; }
+        .ts-step > summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.65);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(6px);
+        }
+        .ts-step > summary::-webkit-details-marker { display: none; }
+        .ts-step-title {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            min-width: 0;
+        }
+        .ts-step-n {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: rgba(94,114,228,0.18);
+            border: 1px solid rgba(94,114,228,0.28);
+            color: #32325d;
+            font-weight: 1000;
+            flex: 0 0 auto;
+        }
+        .ts-step-n > i {
+            font-size: 1.05rem;
+            line-height: 1;
+        }
+        .ts-step-label {
+            font-weight: 1000;
+            color: #32325d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ts-step-desc {
+            color: #6c757d;
+            font-weight: 700;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .ts-step-chevron { font-weight: 900; color: #32325d; opacity: 0.9; flex: 0 0 auto; }
+        .ts-step[open] .ts-step-chevron { transform: rotate(180deg); }
+        .ts-step-body { padding: 16px; background: #fff; }
+
+        .ts-settings-head {
+            margin-bottom: 14px;
+        }
+        .ts-hub-year-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px 24px;
+            margin-bottom: 16px;
+        }
+        .ts-hub-year-row .ts-hub-tools {
+            flex: 1 1 280px;
+            min-width: 0;
+            margin-top: 0;
+        }
+        .ts-hub-year-row .ts-year-strip {
+            flex: 0 0 auto;
+            width: min(100%, 300px);
+            margin-left: auto;
+        }
+        @media (max-width: 640px) {
+            .ts-hub-year-row .ts-year-strip {
+                margin-left: 0;
+                width: 100%;
+                max-width: none;
+            }
+        }
+        .ts-settings-intro {
+            min-width: 0;
+        }
+        .ts-settings-intro p {
+            margin: 0 0 10px;
+        }
+        .ts-settings-intro p:last-child {
+            margin-bottom: 0;
+        }
+        .ts-year-strip {
+            margin: 0;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(50, 50, 93, 0.06);
+            overflow: hidden;
+        }
+        .ts-year-strip__inner {
+            padding: 12px 14px 14px;
+        }
+        .ts-year-strip__title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 10px;
+            font-size: 0.72rem;
+            font-weight: 900;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .ts-year-strip__title i {
+            font-size: 1rem;
+            color: var(--brand1);
+            opacity: 0.95;
+        }
+        .ts-year-strip__controls {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .ts-year-strip__select {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #32325d;
+            background: #f8f9fc;
+        }
+        .ts-year-strip__add {
+            flex: 0 0 auto;
+            align-self: stretch;
+            white-space: nowrap;
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+        .ts-year-strip__hint {
+            margin: 10px 0 0;
+            font-size: 0.82rem;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+        .ts-hub-tools h3 {
+            margin: 0 0 8px;
+            font-size: 1em;
+            color: #32325d;
         }
     </style>
 </head>
@@ -243,9 +419,9 @@
             <h1>MS365-Schulverwaltung</h1>
             <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
                 <span class="header-tool-indicator__label">Werkzeug:</span>
-                <span class="header-tool-indicator__name">Schul‑Grundeinstellungen</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-sliders2-vertical"></i>Schul‑Grundeinstellungen</span>
             </div>
-            <p>Domain, Fächer, Lehrkräfte, Klassen und Schüler:innen lokal im Browser pflegen – gemeinsame Datenbasis für Kursteams, Jahrgang, ARGE und Gruppen‑Tools.</p>
+            <p>Stammdaten (schulweit) und schuljahresbezogene Listen zentral pflegen – gemeinsame Datenbasis für Kursteams, Jahrgang, ARGE und Gruppen‑Tools.</p>
             <p class="header-help-row"><a href="hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
                 <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
@@ -263,42 +439,76 @@
         <div class="content">
             <section class="settings" aria-label="Schul-Grundeinstellungen">
                 <h2>Schul‑Grundeinstellungen</h2>
-                <p>Diese Daten werden <strong>lokal im Browser</strong> gespeichert und können von den Tools (Kursteams, Jahrgang, ARGE) als gemeinsame Basis verwendet werden.</p>
-
                 <form id="tenantSettingsForm" onsubmit="return false;">
-                    <section class="tile" aria-label="Schul-Grundeinstellungen (Basis)">
-                        <div class="tile-head">
-                            <h3 class="tile-title">Schul‑Grundeinstellungen</h3>
-                            <p class="tile-subtitle">Bitte hier starten: Domain festlegen, dann Listen befüllen.</p>
+                    <div class="ts-settings-head">
+                        <div class="ts-settings-intro">
+                            <p>Diese <strong>Zentrale</strong> speichert Daten <strong>lokal im Browser</strong>. <strong>Stammdaten</strong> (Domain, Fächer, ARGE, Lehrkräfte, Verwaltung) gelten <strong>schulweit</strong> und ändern sich in der Regel selten. <strong>Schüler:innen, Klassen</strong> und <strong>Klassen‑Gruppen (Microsoft 365)</strong> orientieren sich am <strong>Schuljahr</strong> (oben rechts neben „Quellen &amp; Werkzeuge“).</p>
+                            <p>Gemeinsame Basis für Kursteams, Jahrgang, ARGE, Einrichtung und Gruppen‑Tools.</p>
                         </div>
-                        <div class="field">
-                            <label for="schoolEmailDomain">E-Mail-Domain der Schule (ohne @)</label>
-                            <input type="text" id="schoolEmailDomain" placeholder="ms365.schule" autocomplete="off">
-                            <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
-                                Wird auch für Vorschauen und automatische E-Mail-Erzeugung genutzt (z. B. <code>Kürzel@domain</code>).
-                            </small>
+                    </div>
+                    <div class="ts-hub-year-row">
+                        <div class="settings-module ts-hub-tools" aria-label="Weitere Einstiegspunkte">
+                            <h3>Quellen &amp; Werkzeuge</h3>
+                            <p style="margin:0 0 10px;color:var(--muted);font-size:0.92em;line-height:1.4;">Daten können hier gepflegt oder in der Einrichtung bzw. Gruppenverwaltung importiert und übernommen werden.</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                                <a class="btn btn-success" href="einrichtung.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">Geführte Einrichtung <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                                <a class="btn" href="tools/schulstruktur-sync.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">MS 365 Gruppenverwaltung <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                                <a class="btn" href="ersteinrichtung.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px;">Experten‑Ansicht <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                            </div>
                         </div>
-                    </section>
+                        <div class="ts-year-strip" aria-label="Aktuelles Schuljahr">
+                            <div class="ts-year-strip__inner">
+                                <label class="ts-year-strip__title" for="schoolYearSelect">
+                                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                    Schuljahr
+                                </label>
+                                <div class="ts-year-strip__controls">
+                                    <select id="schoolYearSelect" class="ts-year-strip__select" aria-describedby="schoolYearStripHint"></select>
+                                    <button type="button" class="btn ts-year-strip__add" id="schoolYearAddBtn" title="Weiteres Schuljahr anlegen" aria-label="Neues Schuljahr anlegen"><i class="bi bi-plus-lg" aria-hidden="true"></i><span class="ts-year-strip__add-text"> Schuljahr</span></button>
+                                </div>
+                                <p id="schoolYearStripHint" class="ts-year-strip__hint">Gilt für Schüler:innen, Klassen und Klassen‑Gruppen. Stammdaten (Domain, Fächer, …) sind schulweit und unabhängig vom Schuljahr.</p>
+                            </div>
+                        </div>
+                    </div>
 
-                    <section class="tile" aria-label="Schul-Grundeinstellungen (Listen)">
-                        <div class="tile-head">
-                            <h3 class="tile-title">Listen</h3>
-                            <p class="tile-subtitle">Import (CSV/XLSX), Vorlagen und Tabellenbearbeitung per Doppelklick.</p>
-                        </div>
+                    <details class="ts-step" id="tenantStep1" open>
+                        <summary>
+                            <div class="ts-step-title">
+                                <span class="ts-step-n" aria-hidden="true"><i class="bi bi-building"></i></span>
+                                <div style="min-width:0;">
+                                    <div class="ts-step-label">Stammdaten (schulweit)</div>
+                                    <div class="ts-step-desc">E-Mail-Domain und darunter vier Tabs: Fächer, ARGE, Lehrkräfte, Verwaltung (schuljahrunabhängig)</div>
+                                </div>
+                            </div>
+                            <span class="ts-step-chevron">▾</span>
+                        </summary>
+                        <div class="ts-step-body">
+                            <section class="tile" aria-label="Stammdaten der Schule">
+                                <div class="tile-head">
+                                    <h3 class="tile-title">Stammdaten</h3>
+                                    <p class="tile-subtitle">Gelten für <strong>alle Schuljahre</strong> und alle Tools, die diese Listen lesen. Import (CSV/XLSX), Vorlagen und Tabellenbearbeitung per Doppelklick.</p>
+                                </div>
+                                <div class="field">
+                                    <label for="schoolEmailDomain">E-Mail-Domain der Schule (ohne @)</label>
+                                    <input type="text" id="schoolEmailDomain" placeholder="ms365.schule" autocomplete="off">
+                                    <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
+                                        Wird für Vorschauen und automatische E-Mail-Erzeugung genutzt (z. B. <code>Kürzel@domain</code>).
+                                    </small>
+                                </div>
 
-                        <div class="tabs" role="tablist" aria-label="Grundeinstellungen: Listen">
-                            <button type="button" class="tab-btn" id="tabSubjects" role="tab" aria-selected="true" aria-controls="panelSubjects">Fächer</button>
-                            <button type="button" class="tab-btn" id="tabTeachers" role="tab" aria-selected="false" aria-controls="panelTeachers">Lehrer</button>
-                            <button type="button" class="tab-btn" id="tabStudents" role="tab" aria-selected="false" aria-controls="panelStudents">Schüler</button>
-                            <button type="button" class="tab-btn" id="tabClasses" role="tab" aria-selected="false" aria-controls="panelClasses">Klassen</button>
-                        </div>
+                                <div class="tabs" role="tablist" aria-label="Grundeinstellungen: Stammdaten" style="margin-top:14px;">
+                                    <button type="button" class="tab-btn" id="tabSubjects" role="tab" aria-selected="true" aria-controls="panelSubjects"><i class="bi bi-journal-text" aria-hidden="true"></i>Fächer</button>
+                                    <button type="button" class="tab-btn" id="tabArges" role="tab" aria-selected="false" aria-controls="panelArges"><i class="bi bi-diagram-3" aria-hidden="true"></i>ARGE</button>
+                                    <button type="button" class="tab-btn" id="tabTeachers" role="tab" aria-selected="false" aria-controls="panelTeachers"><i class="bi bi-person-chalkboard" aria-hidden="true"></i>Lehrer</button>
+                                    <button type="button" class="tab-btn" id="tabVerwaltung" role="tab" aria-selected="false" aria-controls="panelVerwaltung"><i class="bi bi-building-gear" aria-hidden="true"></i>Verwaltung</button>
+                                </div>
 
                         <div id="panelSubjects" class="tab-panel active" role="tabpanel" aria-labelledby="tabSubjects">
                             <div class="field">
                                 <label for="tenantSubjectsLines">Fächerliste (eine Zeile pro Fach)</label>
                                 <textarea id="tenantSubjectsLines" placeholder="D;Deutsch&#10;M;Mathematik&#10;E;Englisch"></textarea>
                                 <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
-                                    Format: <code>Kürzel;Name</code> (Trenner: <code>;</code>, Tab, Komma oder <code>|</code>). Zeilen mit <code>#</code> am Anfang werden ignoriert.
+                                    Format: <code>Kürzel;Name</code> (Trenner: <code>;</code>, Tab, Komma oder <code>|</code>). Wie <a href="einrichtung.html">Einrichtung</a> Schritt 6. Zeilen mit <code>#</code> am Anfang werden ignoriert.
                                 </small>
                                 <div class="settings-actions" style="margin-top:10px;">
                                     <label class="btn" for="tenantSubjectsImportFile" style="cursor:pointer;"><i class="bi bi-upload"></i>Import (CSV/XLSX)</label>
@@ -321,6 +531,39 @@
                                 </div>
                                 <div class="settings-actions" style="margin-top:10px;">
                                     <button type="button" class="btn btn-success" id="tenantSubjectsAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="panelArges" class="tab-panel" role="tabpanel" aria-labelledby="tabArges">
+                            <div class="field">
+                                <label for="tenantArgesLines">Arbeitsgruppen / ARGE (eine Zeile pro ARGE)</label>
+                                <textarea id="tenantArgesLines" spellcheck="false" placeholder="SPRACHEN;Sprachen;D,E&#10;NAWI;Naturwissenschaften;BIO,CH,PH"></textarea>
+                                <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
+                                    Format: <code>Kürzel;Bezeichnung</code> oder <code>Kürzel;Bezeichnung;Fachkürzel1,Fachkürzel2</code> (optionale Zuordnung zu Fächern). Wie <a href="einrichtung.html">Einrichtung</a> Schritt 7. Zeilen mit <code>#</code> am Anfang werden ignoriert.
+                                </small>
+                                <div class="settings-actions" style="margin-top:10px;">
+                                    <label class="btn" for="tenantArgesImportFile" style="cursor:pointer;"><i class="bi bi-upload"></i>Import (CSV/XLSX)</label>
+                                    <input type="file" id="tenantArgesImportFile" accept=".csv,.xlsx,.xls">
+                                    <button type="button" class="btn" id="tenantArgesTemplateXlsx"><i class="bi bi-file-earmark-spreadsheet"></i>XLSX‑Vorlage</button>
+                                </div>
+                                <div class="teachers-table-wrap" aria-label="ARGE-Liste als Tabelle" style="margin-top:12px;">
+                                    <table class="teachers-table" aria-label="ARGE-Liste (editierbar per Doppelklick)">
+                                        <thead>
+                                            <tr>
+                                                <th>Kürzel</th>
+                                                <th>Bezeichnung</th>
+                                                <th>Fächer (Zuordnung)</th>
+                                                <th class="action-cell">Aktion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tenantArgesTableBody">
+                                            <tr><td colspan="4" style="color:#6c757d;">Noch keine Einträge – oben einfügen oder „+ Zeile“.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="settings-actions" style="margin-top:10px;">
+                                    <button type="button" class="btn btn-success" id="tenantArgesAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
                                 </div>
                             </div>
                         </div>
@@ -358,7 +601,61 @@
                             </div>
                         </div>
 
-                        <div id="panelStudents" class="tab-panel" role="tabpanel" aria-labelledby="tabStudents">
+                        <div id="panelVerwaltung" class="tab-panel" role="tabpanel" aria-labelledby="tabVerwaltung">
+                            <div class="field">
+                                <label for="tenantAdminLines">Verwaltung / Schulorganisation (eine Zeile pro Rolle)</label>
+                                <textarea id="tenantAdminLines" spellcheck="false" placeholder="Direktion;Direktorin;vorname@schule.at&#10;Sekretariat;;sekretariat@schule.at"></textarea>
+                                <small style="color:var(--muted);display:block;margin-top:8px;line-height:1.45;">
+                                    Format: <code>Rolle;Name;E-Mail</code> (wie in der <a href="einrichtung.html">geführten Einrichtung</a>, Schritt 3). Weitere Rollen frei wählbar; dieselben Daten erscheinen dort nach Speichern wieder.
+                                </small>
+                                <div class="teachers-table-wrap" aria-label="Verwaltung als Tabelle" style="margin-top:12px;">
+                                    <table class="teachers-table" aria-label="Verwaltung (editierbar per Doppelklick)">
+                                        <thead>
+                                            <tr>
+                                                <th>Rolle</th>
+                                                <th>Name</th>
+                                                <th>E-Mail</th>
+                                                <th class="action-cell">Aktion</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tenantAdminTableBody">
+                                            <tr><td colspan="4" style="color:#6c757d;">Noch keine Einträge – oben einfügen oder „+ Zeile“.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="settings-actions" style="margin-top:10px;">
+                                    <button type="button" class="btn btn-success" id="tenantAdminAddRow"><i class="bi bi-plus-circle"></i>Zeile</button>
+                                </div>
+                            </div>
+                        </div>
+                            </section>
+                        </div>
+                    </details>
+
+                    <details class="ts-step" id="tenantStep2" open>
+                        <summary>
+                            <div class="ts-step-title">
+                                <span class="ts-step-n" aria-hidden="true"><i class="bi bi-mortarboard"></i></span>
+                                <div style="min-width:0;">
+                                    <div class="ts-step-label">Schüler, Klassen &amp; Klassen‑Gruppen</div>
+                                    <div class="ts-step-desc">Speicherung pro gewähltem Schuljahr; M365‑Anzeigenamen</div>
+                                </div>
+                            </div>
+                            <span class="ts-step-chevron">▾</span>
+                        </summary>
+                        <div class="ts-step-body">
+                            <section class="tile" aria-label="Schuljahresbezogene Daten">
+                                <div class="tile-head">
+                                    <h3 class="tile-title">Schuljahr &amp; Klassen</h3>
+                                    <p class="tile-subtitle">Schüler:innen und Klassen gelten für das <strong>gewählte Schuljahr</strong> (Wechsel oben rechts neben „Quellen &amp; Werkzeuge“). Klassen‑Gruppen (Microsoft 365) beziehen sich auf dasselbe Schuljahr.</p>
+                                </div>
+
+                                <div class="tabs" role="tablist" aria-label="Grundeinstellungen: Schuljahresbezug">
+                                    <button type="button" class="tab-btn" id="tabStudents" role="tab" aria-selected="true" aria-controls="panelStudents">Schüler</button>
+                                    <button type="button" class="tab-btn" id="tabClasses" role="tab" aria-selected="false" aria-controls="panelClasses">Klassen</button>
+                                </div>
+
+                        <div id="panelStudents" class="tab-panel active" role="tabpanel" aria-labelledby="tabStudents">
                             <div class="field">
                                 <label for="tenantStudentsLines">Schülerliste (eine Zeile pro Schüler)</label>
                                 <textarea id="tenantStudentsLines" placeholder="1AK;Max Mustermann;max.mustermann@schule.de&#10;1AK;Anna Beispiel;anna.beispiel@schule.de"></textarea>
@@ -425,7 +722,18 @@
                                 </div>
                             </div>
                         </div>
-                    </section>
+
+                                <div class="field" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);">
+                                    <label>Klassen‑Gruppen (Microsoft 365): Anzeigename nach Schuljahreswechsel</label>
+                                    <small style="color:var(--muted);display:block;margin:8px 0 12px;line-height:1.45;">
+                                        Hängt vom gewählten Schuljahr ab (Anzeigenamen enthalten z. B. <code>SJ2026/27</code>). Stabile Gruppen‑E‑Mails bleiben gleich; hier passen Sie den <strong>Anzeigenamen</strong> lokal und optional in Entra ID / Microsoft 365 an.
+                                        Voraussetzung für Graph: Anmeldung über das Widget oben und Einträge mit <code>graphGroupId</code> aus der Einrichtung.
+                                    </small>
+                                    <div id="classTeamsRolloverRoot" aria-live="polite"></div>
+                                </div>
+                            </section>
+                        </div>
+                    </details>
 
                     <div class="settings-actions">
                         <button type="button" class="btn btn-success" id="tenantSettingsSave"><i class="bi bi-check2-circle"></i>Speichern</button>
@@ -435,6 +743,7 @@
                         <input type="file" id="tenantSettingsImportFile" accept="application/json,.json">
                         <button type="button" class="btn btn-danger" id="tenantSettingsClear"><i class="bi bi-trash"></i>Löschen</button>
                     </div>
+
                     <div id="tenantSettingsSummary" class="summary" role="status" aria-live="polite"></div>
                 </form>
             </section>
@@ -443,33 +752,107 @@
 
     <script src="ms365-config.js"></script>
     <script src="src/shared/school-domain.js" defer></script>
+    <script src="src/shared/app-dialog.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+    <script src="src/shared/app-data-v2.js" defer></script>
     <script src="src/shared/tenant-settings-core.js" defer></script>
+    <script src="src/shared/graph-rename-preview.js" defer></script>
+    <script type="module" src="src/shared/msal-auth-ui.js"></script>
+    <script src="src/shared/graph-unified-groups.js" defer></script>
     <script src="src/shared/tenant-settings-ui.js" defer></script>
+    <script src="src/shared/class-teams-rollover-ui.js" defer></script>
     <script>
         (function () {
             'use strict';
-            const tabs = [
-                { btn: 'tabSubjects', panel: 'panelSubjects' },
-                { btn: 'tabTeachers', panel: 'panelTeachers' },
-                { btn: 'tabStudents', panel: 'panelStudents' },
-                { btn: 'tabClasses', panel: 'panelClasses' }
-            ];
-            function setActive(activeBtnId) {
-                tabs.forEach(({ btn, panel }) => {
+            function wireTabGroup(tabs, defaultBtnId) {
+                function setActive(activeBtnId) {
+                    tabs.forEach(({ btn, panel }) => {
+                        const b = document.getElementById(btn);
+                        const p = document.getElementById(panel);
+                        const on = btn === activeBtnId;
+                        if (b) b.setAttribute('aria-selected', on ? 'true' : 'false');
+                        if (p) p.classList.toggle('active', on);
+                    });
+                }
+                tabs.forEach(({ btn }) => {
                     const b = document.getElementById(btn);
-                    const p = document.getElementById(panel);
-                    const on = btn === activeBtnId;
-                    if (b) b.setAttribute('aria-selected', on ? 'true' : 'false');
-                    if (p) p.classList.toggle('active', on);
+                    if (!b) return;
+                    b.addEventListener('click', () => setActive(btn));
                 });
+                setActive(defaultBtnId);
             }
-            tabs.forEach(({ btn }) => {
-                const b = document.getElementById(btn);
-                if (!b) return;
-                b.addEventListener('click', () => setActive(btn));
+            wireTabGroup(
+                [
+                    { btn: 'tabSubjects', panel: 'panelSubjects' },
+                    { btn: 'tabArges', panel: 'panelArges' },
+                    { btn: 'tabTeachers', panel: 'panelTeachers' },
+                    { btn: 'tabVerwaltung', panel: 'panelVerwaltung' }
+                ],
+                'tabSubjects'
+            );
+            wireTabGroup(
+                [
+                    { btn: 'tabStudents', panel: 'panelStudents' },
+                    { btn: 'tabClasses', panel: 'panelClasses' }
+                ],
+                'tabStudents'
+            );
+
+            (function applyHashOpenClassesTab() {
+                function openClassesTab() {
+                    const tabStudents = document.getElementById('tabStudents');
+                    const tabClasses = document.getElementById('tabClasses');
+                    const pStudents = document.getElementById('panelStudents');
+                    const pClasses = document.getElementById('panelClasses');
+                    if (!tabClasses || !pClasses) return;
+                    if (tabStudents) tabStudents.setAttribute('aria-selected', 'false');
+                    tabClasses.setAttribute('aria-selected', 'true');
+                    if (pStudents) pStudents.classList.remove('active');
+                    pClasses.classList.add('active');
+                    window.setTimeout(function () {
+                        const roll = document.getElementById('classTeamsRolloverRoot');
+                        if (roll) roll.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 120);
+                }
+                function check() {
+                    const raw = String(location.hash || '')
+                        .replace(/^#/, '')
+                        .toLowerCase();
+                    if (raw === 'classes' || raw === 'panelclasses' || raw === 'klassen') openClassesTab();
+                }
+                check();
+                window.addEventListener('hashchange', check);
+            })();
+        })();
+
+        (function () {
+            'use strict';
+            const step1 = document.getElementById('tenantStep1');
+            const step2 = document.getElementById('tenantStep2');
+            const domainInp = document.getElementById('schoolEmailDomain');
+
+            if (!step1 || !step2 || !domainInp) return;
+
+            function hasDomain() {
+                return String(domainInp.value || '').trim().length >= 3;
+            }
+
+            function autoFold() {
+                if (hasDomain()) {
+                    step2.open = true;
+                    step1.open = false;
+                } else {
+                    step1.open = true;
+                }
+            }
+
+            domainInp.addEventListener('change', autoFold);
+            domainInp.addEventListener('blur', autoFold);
+            domainInp.addEventListener('input', () => {
+                if (hasDomain()) autoFold();
             });
-            setActive('tabSubjects');
+
+            setTimeout(autoFold, 0);
         })();
     </script>
 </body>

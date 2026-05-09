@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
+    <title>MS365-Schulverwaltung – Personen</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .page-card { max-width: 1400px; margin: 0 auto; }
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+            padding-bottom: 20px;
+        }
+        @media (max-width: 1050px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+        }
+        .panel-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+        }
+        .panel-head h2 { margin: 0; font-size: 1.05em; color: #32325d; font-weight: 900; }
+        .panel-body { padding: 14px 16px; }
+        .muted { color: var(--muted); }
+
+        .tree-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .tree-actions .btn { margin: 0; padding: 10px 12px; border-radius: 10px; }
+        .small-btn { padding: 8px 10px !important; font-size: 0.92em; }
+
+        .tree-filter { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .tree-filter label { display: block; font-weight: 700; color: #495057; margin-bottom: 6px; font-size: 0.92em; }
+        .tree-filter select, .tree-filter input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .pv-filter-sort { grid-column: 1 / -1; }
+        @media (min-width: 640px) {
+            .tree-filter.pv-filters-3 { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .tree {
+            margin: 12px 0 0;
+            padding: 0;
+            list-style: none;
+            max-height: min(64vh, 560px);
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .tree li { border-bottom: 1px solid #f0f1f3; }
+        .tree li:last-child { border-bottom: 0; }
+        .tree button.pv-tree-row {
+            width: 100%;
+            text-align: left;
+            background: transparent;
+            border: 0;
+            padding: 10px 12px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .tree button.pv-tree-row:hover { background: rgba(94,114,228,0.06); }
+        .tree button.pv-tree-row[aria-current="true"] { background: rgba(94,114,228,0.10); }
+        .pv-tree-icon {
+            flex: 0 0 auto;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(94,114,228,0.10);
+            color: #5e72e4;
+            font-size: 1.1rem;
+        }
+        .pv-tree-main { flex: 1 1 auto; min-width: 0; }
+        .pv-tree-title { font-weight: 800; color: #32325d; line-height: 1.25; word-break: break-word; }
+        .pv-tree-sub { font-size: 0.86em; color: var(--muted); margin-top: 2px; word-break: break-all; }
+        .pv-tree-meta { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #e9ecef;
+            background: #fafbff;
+            color: #495057;
+            font-weight: 800;
+            font-size: 0.78em;
+            white-space: nowrap;
+        }
+        .pill.ok { border-color: rgba(13,128,80,0.18); background: rgba(13,128,80,0.08); color: #0d8050; }
+        .pill.err { border-color: rgba(176,0,32,0.22); background: rgba(176,0,32,0.07); color: #b00020; }
+        .pill.muted-pill { border-color: #e9ecef; background: #f8f9fa; color: #6c757d; }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .stat {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+        .stat .n { font-weight: 900; font-size: 1.15em; color: #32325d; }
+        .stat .l { font-size: 0.88em; color: var(--muted); margin-top: 2px; }
+
+        .live-banner {
+            margin: 0 0 14px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(94,114,228,0.22);
+            background: linear-gradient(135deg, rgba(94,114,228,0.12) 0%, rgba(45,206,137,0.10) 100%);
+            color: #32325d;
+            line-height: 1.45;
+            box-shadow: 0 10px 26px rgba(50,50,93,0.10);
+        }
+        .live-banner strong { font-weight: 1000; }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(45,206,137,0.15);
+            border: 1px solid rgba(45,206,137,0.28);
+            color: #0d8050;
+            font-weight: 1000;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        .detail-tabs-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 4;
+            padding-top: 6px;
+            margin-top: 10px;
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 10px 22px rgba(50, 50, 93, 0.06);
+        }
+        .detail-tabs {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            padding: 0;
+            margin: 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-tab-btn {
+            appearance: none;
+            border: 1px solid rgba(94, 114, 228, 0.18);
+            border-bottom: 0;
+            background: linear-gradient(180deg, rgba(94,114,228,0.06) 0%, rgba(255,255,255,0.92) 100%);
+            color: #32325d;
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+            padding: 10px 12px;
+            font-weight: 1000;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(50, 50, 93, 0.08);
+            font: inherit;
+        }
+        .detail-tab-btn[aria-selected="true"] {
+            background: #fff;
+            border-color: rgba(94, 114, 228, 0.30);
+            box-shadow: 0 12px 22px rgba(94, 114, 228, 0.16);
+            transform: translateY(1px);
+        }
+        .detail-tab-btn:focus-visible {
+            outline: 2px solid rgba(94, 114, 228, 0.55);
+            outline-offset: 3px;
+        }
+
+        .tab-panel { display: none; margin-top: 12px; }
+        .tab-panel.active { display: block; }
+
+        .hint {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--soft);
+            color: #495057;
+            line-height: 1.45;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        @media (max-width: 900px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
+        .field label { display: block; font-weight: 700; margin: 0 0 6px; color: #495057; }
+        .field input[readonly] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+            background: #f8f9fa;
+            color: #32325d;
+        }
+        .field-full { grid-column: 1 / -1; }
+
+        .pv-groups-wrap {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: auto;
+            max-height: min(48vh, 420px);
+        }
+        .pv-groups-wrap table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+        .pv-groups-wrap th, .pv-groups-wrap td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f0f1f3;
+            text-align: left;
+            vertical-align: top;
+        }
+        .pv-groups-wrap thead th {
+            background: rgba(94,114,228,0.06);
+            font-weight: 800;
+            color: #32325d;
+            position: sticky;
+            top: 0;
+        }
+
+        .pv-log {
+            max-height: 180px;
+            overflow: auto;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #fff;
+            font-family: Consolas, monospace;
+            font-size: 0.82em;
+            line-height: 1.45;
+        }
+
+        .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 14px; align-items: center; }
+        .detail-actions .btn { margin: 0; }
+
+        .field input:not([readonly]), .field textarea:not([readonly]) {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+            background: #fff;
+            color: #32325d;
+        }
+        .field .pv-checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        .field .pv-checkbox-row input[type="checkbox"] { width: auto; margin: 0; }
+
+        .pv-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 9999;
+        }
+        .pv-modal-backdrop.active { display: flex; }
+        .pv-modal {
+            width: min(640px, 96vw);
+            max-height: 92vh;
+            overflow: auto;
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid rgba(94, 114, 228, 0.22);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+        }
+        .pv-modal-head {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(94, 114, 228, 0.10) 0%, rgba(130, 94, 228, 0.06) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .pv-modal-head h3 { margin: 0; color: #32325d; font-size: 1.05em; font-weight: 1000; }
+        .pv-modal-body { padding: 14px 16px; }
+        .pv-modal-close {
+            border: 1px solid rgba(94,114,228,0.22);
+            background: #fff;
+            border-radius: 12px;
+            padding: 8px 10px;
+            cursor: pointer;
+            font-weight: 900;
+            color: #32325d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-person-lines-fill"></i>Personen‑Verwaltung</span>
+            </div>
+            <p style="display:none;"></p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;flex-wrap:wrap;">
+                    <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+                        <button type="button" class="btn small-btn" id="pvBtnLogin"><i class="bi bi-person-badge"></i>Anmelden</button>
+                        <button type="button" class="btn btn-success small-btn" id="pvBtnLoad"><i class="bi bi-cloud-download"></i>Personen einlesen</button>
+                        <button type="button" class="btn small-btn" id="pvBtnCsv"><i class="bi bi-download"></i>CSV</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content" style="padding-top: 0;">
+            <div class="live-banner" role="status">
+                <span class="live-badge"><i class="bi bi-broadcast"></i>VERZEICHNIS</span>
+                <strong>Microsoft Graph:</strong> Personen aus <code>/users</code> laden; <strong>Anlegen</strong>, <strong>Profil per PATCH</strong>, <strong>Konto beenden</strong> (Standard: deaktivieren). Gruppen: <strong>Group.Read.All</strong>.
+            </div>
+
+            <div class="layout">
+                <section class="panel" aria-label="Personenliste">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-people" style="margin-right:10px;"></i>Personen</h2>
+                        <div class="tree-actions">
+                            <button type="button" class="btn btn-success small-btn" id="pvBtnNeu"><i class="bi bi-plus-circle"></i>Neu</button>
+                        </div>
+                        <div class="tree-filter pv-filters-3" aria-label="Filter">
+                            <div>
+                                <label for="pvFilterUserType">Kontotyp</label>
+                                <select id="pvFilterUserType" autocomplete="off">
+                                    <option value="">(alle)</option>
+                                    <option value="Member">Mitglied</option>
+                                    <option value="Guest">Gast</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="pvFilterAccount">Konto</label>
+                                <select id="pvFilterAccount" autocomplete="off">
+                                    <option value="">(alle)</option>
+                                    <option value="1">Nur aktive</option>
+                                    <option value="0">Nur deaktivierte</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="pvFilterDepartment">Abteilung</label>
+                                <select id="pvFilterDepartment" autocomplete="off">
+                                    <option value="">(alle)</option>
+                                </select>
+                            </div>
+                            <div class="pv-filter-sort">
+                                <label for="pvFilterText">Suche</label>
+                                <input type="text" id="pvFilterText" placeholder="z. B. Name, UPN, E-Mail, ID …" autocomplete="off">
+                            </div>
+                            <div class="pv-filter-sort">
+                                <label for="pvSortKey">Sortierung</label>
+                                <select id="pvSortKey" autocomplete="off">
+                                    <option value="displayName:asc">Anzeigename A–Z</option>
+                                    <option value="displayName:desc">Anzeigename Z–A</option>
+                                    <option value="userPrincipalName:asc">Benutzername A–Z</option>
+                                    <option value="department:asc">Abteilung A–Z</option>
+                                    <option value="mail:asc">E-Mail A–Z</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="stats" aria-label="Übersicht">
+                            <li class="stat"><div class="n" id="pvStatTotal">–</div><div class="l">Personen</div></li>
+                            <li class="stat"><div class="n" id="pvStatMember">–</div><div class="l">Mitglieder</div></li>
+                            <li class="stat"><div class="n" id="pvStatGuest">–</div><div class="l">Gäste</div></li>
+                            <li class="stat"><div class="n" id="pvStatActive">–</div><div class="l">Konto aktiv</div></li>
+                        </ul>
+                        <p id="pvProgress" class="muted" style="margin:10px 2px 0;font-size:0.92em;min-height:1.35em;"></p>
+                        <ul class="tree" id="pvTree" aria-label="Personen (Liste)"></ul>
+                    </div>
+                </section>
+
+                <section class="panel" aria-label="Details">
+                    <div class="panel-head">
+                        <h2><i class="bi bi-pencil-square" style="margin-right:10px;"></i>Details</h2>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hint" id="pvHint">
+                            Links eine Person auswählen, um <strong>Profil</strong> und <strong>Gruppen</strong> anzuzeigen. Zuerst <strong>Personen einlesen</strong> wählen.
+                        </div>
+
+                        <div id="pvDetail" style="display:none;">
+                            <p style="margin:0 0 8px;font-weight:900;color:#32325d;font-size:1.02em;" id="pvManageTitle"></p>
+                            <div class="detail-actions" id="pvDetailActions">
+                                <button type="button" class="btn small-btn" id="pvBtnEdit"><i class="bi bi-pencil"></i>Bearbeiten</button>
+                                <button type="button" class="btn btn-success small-btn" id="pvBtnSave" style="display:none;">Speichern</button>
+                                <button type="button" class="btn small-btn" id="pvBtnCancelEdit" style="display:none;">Abbrechen</button>
+                                <button type="button" class="btn btn-danger small-btn" id="pvBtnDelete"><i class="bi bi-slash-circle"></i>Konto beenden …</button>
+                            </div>
+
+                            <div class="detail-tabs-sticky" aria-label="Detail-Tabs">
+                                <div class="detail-tabs" role="tablist">
+                                    <button type="button" class="detail-tab-btn" role="tab" aria-selected="true" aria-controls="pvPanelProfil" id="pvTabProfil" data-pv-tab="profil">Profil</button>
+                                    <button type="button" class="detail-tab-btn" role="tab" aria-selected="false" aria-controls="pvPanelGruppen" id="pvTabGruppen" data-pv-tab="gruppen">Gruppen</button>
+                                </div>
+                            </div>
+
+                            <div id="pvPanelProfil" class="tab-panel active" role="tabpanel" aria-labelledby="pvTabProfil">
+                                <div class="form-grid" id="pvProfileFields"></div>
+                            </div>
+                            <div id="pvPanelGruppen" class="tab-panel" role="tabpanel" aria-labelledby="pvTabGruppen" aria-hidden="true">
+                                <p id="pvGroupsProgress" class="muted" style="margin:0 0 10px;font-size:0.9em;"></p>
+                                <div class="pv-groups-wrap">
+                                    <table aria-label="Gruppenmitgliedschaften">
+                                        <thead>
+                                            <tr>
+                                                <th>Anzeigename</th>
+                                                <th>E-Mail / SMTP</th>
+                                                <th>Typ</th>
+                                                <th>Gruppen-ID</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pvGroupsTbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <h3 style="margin:0 0 8px;font-size:1rem;color:#32325d;">Protokoll</h3>
+            <div id="pvLog" class="pv-log"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <div class="pv-modal-backdrop" id="pvModalCreateBackdrop" aria-hidden="true">
+        <div class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="pvModalCreateTitle">
+            <div class="pv-modal-head">
+                <h3 id="pvModalCreateTitle">Neue Person (Mitglied)</h3>
+                <button type="button" class="pv-modal-close" id="pvModalCreateClose" aria-label="Schließen">×</button>
+            </div>
+            <div class="pv-modal-body">
+                <p class="muted" style="margin:0 0 12px;line-height:1.45;font-size:0.9em;">
+                    Es wird ein <strong>Organisationskonto</strong> (Mitglied) angelegt – nicht für Gäste/Einladungen. Passwort muss die <strong>Kennwortrichtlinien</strong> des Mandanten erfüllen.
+                </p>
+                <div class="form-grid">
+                    <div class="field field-full">
+                        <label for="pvCreateUpn">Benutzername (UPN) <span style="color:#b00020">*</span></label>
+                        <input type="text" id="pvCreateUpn" autocomplete="off" placeholder="max.mustermann@schule.at">
+                    </div>
+                    <div class="field field-full">
+                        <label for="pvCreateDisplayName">Anzeigename <span style="color:#b00020">*</span></label>
+                        <input type="text" id="pvCreateDisplayName" autocomplete="name" placeholder="Max Mustermann">
+                    </div>
+                    <div class="field">
+                        <label for="pvCreateMailNick">Mail-Nickname <span style="color:#b00020">*</span></label>
+                        <input type="text" id="pvCreateMailNick" autocomplete="off" placeholder="maxmustermann (ohne @)">
+                    </div>
+                    <div class="field">
+                        <label for="pvCreatePassword">Initiales Kennwort <span style="color:#b00020">*</span></label>
+                        <input type="password" id="pvCreatePassword" autocomplete="new-password" placeholder="starkes Kennwort">
+                    </div>
+                    <div class="field">
+                        <label for="pvCreateGiven">Vorname</label>
+                        <input type="text" id="pvCreateGiven" autocomplete="given-name">
+                    </div>
+                    <div class="field">
+                        <label for="pvCreateSurname">Nachname</label>
+                        <input type="text" id="pvCreateSurname" autocomplete="family-name">
+                    </div>
+                    <div class="field field-full">
+                        <label for="pvCreateMail">E-Mail (SMTP, optional)</label>
+                        <input type="email" id="pvCreateMail" autocomplete="off" placeholder="leer = automatisch laut Tenant">
+                    </div>
+                    <div class="field field-full">
+                        <div class="pv-checkbox-row">
+                            <input type="checkbox" id="pvCreateForcePw" checked>
+                            <label for="pvCreateForcePw" style="margin:0;font-weight:600;">Kennwort bei nächster Anmeldung ändern</label>
+                        </div>
+                        <div class="pv-checkbox-row">
+                            <input type="checkbox" id="pvCreateEnabled" checked>
+                            <label for="pvCreateEnabled" style="margin:0;font-weight:600;">Konto aktiv</label>
+                        </div>
+                    </div>
+                </div>
+                <p style="margin:14px 0 0;display:flex;flex-wrap:wrap;gap:10px;">
+                    <button type="button" class="btn btn-success" id="pvModalCreateSubmit">Anlegen</button>
+                    <button type="button" class="btn" id="pvModalCreateCancel">Abbrechen</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="pv-modal-backdrop" id="pvModalDeleteBackdrop" aria-hidden="true">
+        <div class="pv-modal" role="dialog" aria-modal="true" aria-labelledby="pvModalDeleteTitle">
+            <div class="pv-modal-head">
+                <h3 id="pvModalDeleteTitle">Konto beenden</h3>
+                <button type="button" class="pv-modal-close" id="pvModalDeleteClose" aria-label="Schließen">×</button>
+            </div>
+            <div class="pv-modal-body">
+                <p class="muted" id="pvDeleteSoftIntro" style="margin:0 0 12px;line-height:1.45;">
+                    <strong>Standard:</strong> Das Konto wird nur <strong>deaktiviert</strong> (<code>accountEnabled: false</code>) und bleibt im Verzeichnis – Anmeldung nicht mehr möglich, Wiederaktivierung später möglich.
+                </p>
+                <div class="field field-full" style="margin-bottom:12px;">
+                    <div class="pv-checkbox-row">
+                        <input type="checkbox" id="pvDeleteHard" autocomplete="off">
+                        <label for="pvDeleteHard" style="margin:0;font-weight:700;">Benutzer dauerhaft aus Entra entfernen (<code>DELETE</code>)</label>
+                    </div>
+                </div>
+                <p id="pvDeleteHardWarn" style="display:none;margin:0 0 12px;color:#b00020;font-weight:800;line-height:1.45;">
+                    <strong>DELETE</strong> entfernt das Objekt dauerhaft. Wiederherstellung nur über Microsoft‑Backups möglich.
+                </p>
+                <p class="muted" style="margin:0 0 12px;line-height:1.45;">Zur Bestätigung den <strong>exakten</strong> Benutzernamen (UPN) eintragen:</p>
+                <p style="margin:0 0 8px;font-family:Consolas,monospace;font-size:0.95em;" id="pvDeleteUpnEcho"></p>
+                <div class="field field-full">
+                    <label for="pvDeleteConfirmInput">UPN bestätigen</label>
+                    <input type="text" id="pvDeleteConfirmInput" autocomplete="off" placeholder="hier UPN wiederholen">
+                </div>
+                <p style="margin:14px 0 0;display:flex;flex-wrap:wrap;gap:10px;">
+                    <button type="button" class="btn" id="pvModalDeleteSubmit" disabled>Konto deaktivieren</button>
+                </p>
+                <p style="margin:10px 0 0;"><button type="button" class="btn" id="pvModalDeleteCancel">Abbrechen</button></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
+    <script src="../src/tools/personen-verwaltung/personen-verwaltung.js" defer></script>
+</body>
+</html>

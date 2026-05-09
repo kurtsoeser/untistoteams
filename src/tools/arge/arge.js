@@ -98,6 +98,7 @@
         const sdb = document.getElementById('schoolDomainBar');
         if (sdb) sdb.style.display = g ? 'none' : '';
         if (a) {
+            adoptArgeLinesFromTenantSettingsIfEmpty();
             scheduleArgePreviewRefresh();
         }
     }
@@ -175,26 +176,49 @@
         return raw.toLowerCase().replace(/[^a-z0-9]/g, '');
     }
 
-    function adoptArgeSubjectsFromTenantSettingsIfEmpty() {
+    /**
+     * Leere ARGE-Liste aus den zentralen Schul‑Einstellungen füllen.
+     * Bevorzugt den Tab „ARGE“ (Stammdaten `arges`); nur wenn dort nichts liegt, Fallback auf Fächer (`subjects`).
+     * Nur `Kürzel;Bezeichnung` — keine dritte Spalte (Fächer-Zuordnung), damit die ARGE‑Zeilenparser nicht mit Mail‑Nicknames kollidieren.
+     */
+    function adoptArgeLinesFromTenantSettingsIfEmpty() {
         const ta = document.getElementById('argeLines');
         if (!ta) return;
         if (normStr(ta.value)) return;
         if (typeof window.ms365TenantSettingsLoad !== 'function') return;
         const s = window.ms365TenantSettingsLoad();
+        const arges = Array.isArray(s?.arges) ? s.arges : [];
+        if (arges.length) {
+            const lines = arges
+                .map((a) => {
+                    const code = normSubjectCode(normStr(a?.code));
+                    const name = normStr(a?.name);
+                    if (code && name) return `${code};${name}`;
+                    if (code) return code;
+                    if (name) return name;
+                    return '';
+                })
+                .filter(Boolean);
+            if (!lines.length) return;
+            ta.value = lines.join('\n');
+            scheduleArgePreviewFromTextarea();
+            showToast('ARGE: Liste aus Schul‑Einstellungen (ARGE‑Stammdaten) übernommen.');
+            return;
+        }
         const subjects = Array.isArray(s?.subjects) ? s.subjects : [];
         if (!subjects.length) return;
         const lines = subjects
             .map((x) => {
                 const code = normStr(x?.code);
                 const name = normStr(x?.name);
-                if (code && name) return `${code};${name}`;
-                return name || code;
+                if (code && name) return `${normSubjectCode(code)};${name}`;
+                return name || normSubjectCode(code);
             })
             .filter(Boolean);
         if (!lines.length) return;
         ta.value = lines.join('\n');
         scheduleArgePreviewFromTextarea();
-        showToast('ARGE: Fächer aus Schul‑Einstellungen übernommen.');
+        showToast('ARGE: Keine ARGE‑Stammdaten — Fächer aus Schul‑Einstellungen übernommen (Fallback).');
     }
 
     let argeTenantSubjectsDebounce;
@@ -237,10 +261,9 @@
                 const domain =
                     typeof window.ms365GetSchoolDomainNoAt === 'function' ? window.ms365GetSchoolDomainNoAt() : normStr(current?.domain);
                 window.ms365TenantSettingsSave({
+                    ...current,
                     domain,
-                    subjects,
-                    teachers: current?.teachers || [],
-                    students: current?.students || []
+                    subjects
                 });
             } catch {
                 // ignore (kein Toast, damit Tippen nicht nervt)
@@ -1059,9 +1082,14 @@
 
     applyInitialModeFromUrl();
     if (panelA && panelA.style.display !== 'none') {
-        adoptArgeSubjectsFromTenantSettingsIfEmpty();
+        adoptArgeLinesFromTenantSettingsIfEmpty();
         scheduleArgePreviewRefresh();
     }
+
+    window.addEventListener('ms365-tenant-settings-changed', () => {
+        adoptArgeLinesFromTenantSettingsIfEmpty();
+        scheduleArgePreviewFromTextarea();
+    });
 
     // bottom toolbar wiring (save/load + import/export)
     const btnSaveState = document.getElementById('btnSaveState');

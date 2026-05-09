@@ -336,7 +336,9 @@
         lines.push('    $i++');
         lines.push('    Write-Host ("[{0}/{1}] {2}" -f $i, $Assignments.Count, $A.TeamName) -ForegroundColor Cyan');
         lines.push('    try {');
-        lines.push('        $g = Get-MgGroup -Filter ("mailNickname eq ''{0}''" -f $A.Gruppenmail) -ConsistencyLevel eventual');
+        lines.push(
+            "        $g = Get-MgGroup -Filter (\"mailNickname eq '{0}'\" -f $A.Gruppenmail) -ConsistencyLevel eventual"
+        );
         lines.push('        if ($null -eq $g) { Write-Warning ("  Gruppe nicht gefunden: {0}" -f $A.Gruppenmail); continue }');
         lines.push('    } catch {');
         lines.push('        Write-Warning ("  Fehler beim Suchen der Gruppe {0}: {1}" -f $A.Gruppenmail, $_.Exception.Message)');

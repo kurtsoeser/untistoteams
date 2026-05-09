@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
+    <title>MS365-Schulverwaltung – Klassen umbenennen (Archiv)</title>
+    <link rel="stylesheet" href="../../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-archive"></i>Klassen umbenennen <span style="font-weight:600;opacity:0.85;">(Archiv)</span></span>
+            </div>
+            <p><strong>Archiv:</strong> Vier‑Schritt‑Assistent. Der empfohlene Weg ist jetzt die <a href="../../tenant.html#classes">Schul‑Einstellungen → Tab „Klassen“</a> (Block „Klassen‑Gruppen … Anzeigename nach Schuljahreswechsel“).</p>
+            <p>Klassen‑Gruppen zum Schuljahreswechsel umbenennen (Anzeigename), mit Vorschau und Ausführung per Microsoft Graph – ohne Mail‑Nickname zu ändern.</p>
+            <p class="header-help-row"><a href="../../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
+            <div class="toolbar">
+                <a class="btn" href="../../index.html"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                <a class="btn" href="../../tenant.html#classes" style="margin-left:8px;"><i class="bi bi-sliders2-vertical"></i>Schul‑Einstellungen (Klassen)</a>
+            </div>
+        </div>
+
+        <div id="panelKu">
+            <div class="steps ku-steps" id="kuStepsBar">
+                <div class="step active" data-ku-step="1"><i class="bi bi-cloud-download"></i>1. Gruppen laden</div>
+                <div class="step" data-ku-step="2"><i class="bi bi-sliders"></i>2. Regel</div>
+                <div class="step" data-ku-step="3"><i class="bi bi-clipboard-check"></i>3. Kontrolle</div>
+                <div class="step" data-ku-step="4"><i class="bi bi-play-circle"></i>4. Ausführen</div>
+            </div>
+
+            <div class="content">
+                <div class="ku-step-content active" data-ku-step="1">
+                    <h2>Schritt 1: Microsoft 365-Gruppen laden</h2>
+                    <div class="alert alert-info">
+                        <strong>Microsoft Graph:</strong> Es werden <strong>einheitliche Microsoft-365-Gruppen</strong> (Unified) gelesen.
+                        Optional filtern Sie die Liste, bevor Sie die Umbenennungsregel festlegen.
+                    </div>
+                    <p style="margin:12px 0;">
+                        <button type="button" class="btn" id="kuBtnLogin"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
+                        <button type="button" class="btn btn-success" id="kuBtnLoad"><i class="bi bi-cloud-download"></i>Gruppen laden</button>
+                        <button type="button" class="btn" id="kuBtnLoadTenantClasses"><i class="bi bi-sliders2-vertical"></i>Klassen aus Einstellungen laden</button>
+                    </p>
+                    <div class="filter-group">
+                        <label for="kuFilterContains">Nur Gruppen, deren Anzeigename enthält (optional)</label>
+                        <input type="text" id="kuFilterContains" autocomplete="off" placeholder="z. B. Klasse">
+                    </div>
+                    <div class="filter-group" style="margin-top:10px;">
+                        <label class="checkbox-label" for="kuOnlyTeams">
+                            <input type="checkbox" id="kuOnlyTeams">
+                            <span>Nur Gruppen mit <strong>Teams</strong>-Ressource</span>
+                        </label>
+                    </div>
+                    <p id="kuLoadStatus" style="margin-top:12px;color:#495057;"></p>
+                    <p id="kuLoadedGroupsSummary" style="margin-top:10px;color:#495057;"></p>
+                    <div class="table-container" style="max-height:min(45vh,420px);margin-top:10px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Klasse</th>
+                                    <th>Abschlussjahr</th>
+                                    <th>Klassenname</th>
+                                    <th>Anzeigename (Microsoft 365)</th>
+                                    <th>Mail-Nickname</th>
+                                    <th>E-Mail (Vorschau)</th>
+                                    <th>Klassenvorstand</th>
+                                    <th>E-Mail (KV)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kuLoadedGroupsBody">
+                                <tr><td colspan="8" style="color:#6c757d;">Noch keine Daten – „Gruppen laden“ oder „Klassen aus Einstellungen laden“ ausführen.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="step-nav-row step-nav-row--forward-only">
+                        <button type="button" class="btn btn-success" id="kuNext1" disabled><i class="bi bi-arrow-right-circle"></i>Weiter zur Regel</button>
+                    </div>
+                </div>
+
+                <div class="ku-step-content" data-ku-step="2">
+                    <h2>Schritt 2: Umbenennungsregel</h2>
+                    <div class="alert alert-info">
+                        <strong>Filter (Format-Kriterium):</strong> Umbenannt werden nur Gruppen, deren Anzeigename dem Muster entspricht, z. B. <code>Klasse 1A</code>, <code>Klasse 2B</code> oder <code>Klasse 10A</code>:
+                        fester Text <strong>Präfix</strong>, dann die <strong>Stufe</strong> (Zahl), dann optional ein <strong>Kürzel</strong> (z. B. A, B, HAK).
+                    </div>
+                    <div class="filter-group">
+                        <label for="kuPrefix">Präfix im Anzeigenamen</label>
+                        <input type="text" id="kuPrefix" value="Klasse" autocomplete="off">
+                    </div>
+                    <div class="alert alert-info" style="margin-top:12px;">
+                        <strong>Schuljahreswechsel:</strong> Die Stufe wird automatisch um <strong>+1</strong> erhöht
+                        (z. B. <code>Klasse 1A → Klasse 2A</code>, <code>Klasse 2B → Klasse 3B</code>).
+                    </div>
+
+                    <h3 style="margin-top:16px;font-size:1rem;">Bulk: Text ersetzen (optional)</h3>
+                    <div class="alert alert-info" style="margin-top:10px;">
+                        Beispiel: <code>Klasse</code> → <code>Jahrgang</code> (wird auf den <strong>neuen</strong> Anzeigenamen angewendet).
+                    </div>
+                    <div class="filter-group" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                        <div style="flex:1;min-width:220px;">
+                            <label for="kuReplaceFind">Suchen</label>
+                            <input type="text" id="kuReplaceFind" autocomplete="off" placeholder="z. B. Klasse">
+                        </div>
+                        <div style="flex:1;min-width:220px;">
+                            <label for="kuReplaceWith">Ersetzen durch</label>
+                            <input type="text" id="kuReplaceWith" autocomplete="off" placeholder="z. B. Jahrgang">
+                        </div>
+                        <div style="min-width:180px;">
+                            <button type="button" class="btn" id="kuReplaceAdd">+ Regel hinzufügen</button>
+                        </div>
+                    </div>
+                    <div class="table-container" style="max-height:220px;margin-top:10px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Suchen</th>
+                                    <th>Ersetzen durch</th>
+                                    <th style="width:1%;white-space:nowrap;">Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kuReplaceRulesBody">
+                                <tr><td colspan="3" style="color:#6c757d;">Keine Regeln – optional hinzufügen.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top:16px;font-size:1rem;">Vorschau (Schritt 2)</h3>
+                    <p id="kuRulePreviewSummary" style="color:#495057;margin-bottom:12px;"></p>
+                    <div class="table-container" style="max-height:260px;margin-bottom:10px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Anzeigename (alt)</th>
+                                    <th>Anzeigename (neu)</th>
+                                    <th>Hinweis</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kuRulePreviewBody">
+                                <tr><td colspan="3" style="color:#6c757d;">Noch keine Vorschau – zurück zu Schritt 1.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="step-nav-row" style="margin-top:18px;">
+                        <button type="button" class="btn" id="kuBack2"><i class="bi bi-arrow-left"></i>Zurück</button>
+                        <button type="button" class="btn btn-success" id="kuNext2"><i class="bi bi-calculator"></i>Vorschau berechnen</button>
+                    </div>
+                </div>
+
+                <div class="ku-step-content" data-ku-step="3">
+                    <h2>Schritt 3: Kontrolle</h2>
+                    <p id="kuPreviewSummary" style="color:#495057;margin-bottom:12px;"></p>
+                    <div class="table-container" style="max-height:min(55vh,520px);">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Anzeigename (alt)</th>
+                                    <th>Anzeigename (neu)</th>
+                                    <th>Hinweis</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kuPreviewBody">
+                                <tr><td colspan="3" style="color:#6c757d;">Noch keine Vorschau – zurück zu Schritt 2.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="step-nav-row" style="margin-top:16px;">
+                        <button type="button" class="btn" id="kuBack3"><i class="bi bi-arrow-left"></i>Zurück</button>
+                        <button type="button" class="btn btn-success" id="kuNext3" disabled><i class="bi bi-arrow-right-circle"></i>Weiter zur Ausführung</button>
+                    </div>
+                </div>
+
+                <div class="ku-step-content" data-ku-step="4">
+                    <h2>Schritt 4: Umbenennung ausführen</h2>
+                    <div class="alert alert-warning">
+                        <strong>Achtung:</strong> Es werden die in der Vorschau gültigen Gruppen per <code>PATCH /groups</code> umbenannt.
+                        Bitte zuerst die Vorschau prüfen. Der Vorgang kann bei vielen Gruppen einige Minuten dauern.
+                        Dieses Tool ändert dabei <strong>nur den Anzeigenamen</strong> (<code>displayName</code>). <strong>Mail-Nickname</strong> und <strong>Gruppen-E-Mail</strong> bleiben unverändert.
+                    </div>
+                    <p style="margin:12px 0;">
+                        <button type="button" class="btn btn-success" id="kuBtnRun"><i class="bi bi-play-fill"></i>Jetzt umbenennen</button>
+                    </p>
+                    <h3 style="font-size:1rem;margin-top:18px;">Protokoll</h3>
+                    <div id="kuLog" style="max-height:260px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;line-height:1.45;"></div>
+                    <div class="step-nav-row" style="margin-top:16px;">
+                        <button type="button" class="btn" id="kuBack4"><i class="bi bi-arrow-left"></i>Zurück zur Vorschau</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+
+    <script src="../../ms365-config.js"></script>
+    <script src="../../src/shared/app-dialog.js" defer></script>
+    <script src="../../src/shared/step-progress.js" defer></script>
+    <script src="../../src/shared/tenant-settings-core.js" defer></script>
+    <script src="../../src/shared/school-domain.js" defer></script>
+    <script src="../../src/tools/klassen-umbenennen/klassen-umbenennen.js" defer></script>
+</body>
+</html>

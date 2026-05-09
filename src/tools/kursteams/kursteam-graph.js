@@ -1,6 +1,25 @@
 (function () {
     'use strict';
 
+    const MSAL_LOADER_IMPORT = (function () {
+        const needle = 'kursteam-graph.js';
+        const rel = '../../shared/msal-loader.js';
+        const scripts = document.getElementsByTagName('script');
+        for (let i = scripts.length - 1; i >= 0; i--) {
+            const src = scripts[i].src || '';
+            if (src.indexOf(needle) !== -1) {
+                try {
+                    return new URL(rel, src).href;
+                } catch (_) {}
+            }
+        }
+        try {
+            return new URL('src/shared/msal-loader.js', document.baseURI).href;
+        } catch (_) {
+            return 'src/shared/msal-loader.js';
+        }
+    })();
+
     const GRAPH_SCOPES = [
         'https://graph.microsoft.com/User.Read',
         'https://graph.microsoft.com/Group.ReadWrite.All',
@@ -18,7 +37,9 @@
     let pca = null;
 
     function toast(msg) {
-        if (typeof window.ms365ShowToast === 'function') {
+        if (typeof window.ms365ToastOrAlert === 'function') {
+            window.ms365ToastOrAlert(msg);
+        } else if (typeof window.ms365ShowToast === 'function') {
             window.ms365ShowToast(msg);
         } else {
             window.alert(msg);
@@ -27,11 +48,11 @@
 
     async function loadMsal() {
         if (msalMod) return msalMod;
-        try {
-            msalMod = await import('https://esm.sh/@azure/msal-browser@3.26.1');
-        } catch {
-            msalMod = await import('https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.26.1/+esm');
+        const loader = await import(MSAL_LOADER_IMPORT);
+        if (typeof loader.loadMsalBrowser !== 'function') {
+            throw new Error('MSAL-Loader: loadMsalBrowser fehlt.');
         }
+        msalMod = await loader.loadMsalBrowser();
         return msalMod;
     }
 

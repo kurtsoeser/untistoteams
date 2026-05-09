@@ -3,81 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050">
-    <title>MS365-Schulverwaltung – Teams archivieren</title>
-    <link rel="stylesheet" href="../app.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <title>MS365-Schulverwaltung – Weiterleitung</title>
+    <link rel="canonical" href="archiv/teams-archiv.html">
+    <script>
+        (function () {
+            var t = 'archiv/teams-archiv.html' + (window.location.search || '') + (window.location.hash || '');
+            window.location.replace(t);
+        })();
+    </script>
+    <meta http-equiv="refresh" content="0;url=archiv/teams-archiv.html">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>MS365-Schulverwaltung</h1>
-            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
-                <span class="header-tool-indicator__label">Werkzeug:</span>
-                <span class="header-tool-indicator__name"><i class="bi bi-archive"></i>Teams archivieren</span>
-            </div>
-            <p>Teams archivieren oder reaktivieren (entspricht der verknüpften M365‑Gruppe). Optional die SharePoint‑Website der Gruppe schreibgeschützt stellen.</p>
-            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
-            <div class="toolbar">
-                <a class="btn" href="../index.html"><i class="bi bi-arrow-left"></i>Dashboard</a>
-            </div>
-        </div>
-
-        <div class="content" style="padding-bottom: 28px;">
-            <div class="alert alert-info">
-                <strong>Microsoft Graph:</strong> Archivierung entspricht dem Admin-Center bzw.
-                <code>Set-TeamArchivedState</code> / <code>POST …/teams/{id}/archive</code>.
-                Die <strong>Team-ID</strong> ist die <strong>Object-ID der Microsoft-365-Gruppe</strong> (gleiche GUID).
-            </div>
-            <div class="alert alert-warning">
-                <strong>App-Registrierung (Entra):</strong> Zusätzlich zu Ihren bestehenden Berechtigungen wird für Archiv/Unarchiv
-                <strong>TeamSettings.ReadWrite.All</strong> (delegiert) benötigt; für die Gruppensuche reicht
-                <strong>Group.ReadWrite.All</strong>, falls bereits vorhanden (Administratorzustimmung).
-            </div>
-
-            <div class="filter-section" style="margin-top:18px;">
-                <div class="filter-group">
-                    <label for="taTeamId">Team- / Gruppen-ID (GUID)</label>
-                    <input type="text" id="taTeamId" autocomplete="off" spellcheck="false"
-                        placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
-                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">
-                        Aus Entra (Gruppen) oder Teams-Admin unter „Team“ → Gruppen-ID. Alternativ unten E-Mail oder Anzeigename suchen.
-                    </small>
-                </div>
-                <div class="filter-group" style="margin-top:14px;">
-                    <label for="taSearch">Oder: Gruppen-E-Mail oder Anzeigename (Suche)</label>
-                    <input type="text" id="taSearch" autocomplete="off" placeholder="z. B. 1a-mat@schule.at oder Kurs Mathematik 1a">
-                </div>
-                <p style="margin:10px 0 0;">
-                    <button type="button" class="btn" id="taBtnSearch"><i class="bi bi-search"></i>Team suchen</button>
-                    <button type="button" class="btn" id="taBtnLogin"><i class="bi bi-microsoft"></i>Bei Microsoft anmelden</button>
-                </p>
-                <p id="taResolvedSummary" style="display:none;margin-top:14px;padding:12px;background:#e7f0ff;border-radius:8px;border:1px solid #b6d4fe;color:#084298;font-size:0.95em;"></p>
-
-                <div class="filter-group" style="margin-top:18px;">
-                    <label class="checkbox-label" for="taSpoReadOnly">
-                        <input type="checkbox" id="taSpoReadOnly">
-                        <span>SharePoint-Teamwebsite für Mitglieder schreibgeschützt (<code>shouldSetSpoSiteReadOnlyForMembers</code>)</span>
-                    </label>
-                    <small style="color:#6c757d;display:block;margin-top:8px;line-height:1.45;">
-                        Nur bei <strong>delegierter</strong> Anmeldung sinnvoll; im reinen Anwendungskontext unterstützt Microsoft diesen Schalter nicht.
-                    </small>
-                </div>
-
-                <p style="margin:18px 0 0;">
-                    <button type="button" class="btn btn-success" id="taBtnArchive"><i class="bi bi-archive-fill"></i>Team archivieren</button>
-                    <button type="button" class="btn" id="taBtnUnarchive" style="margin-left:8px;"><i class="bi bi-arrow-counterclockwise"></i>Archivierung aufheben</button>
-                </p>
-            </div>
-
-            <h3 style="margin-top:22px;font-size:1rem;">Protokoll</h3>
-            <div id="taLog" style="max-height:280px;overflow:auto;padding:10px;background:#fff;border:1px solid #ced4da;border-radius:6px;font-family:Consolas,monospace;font-size:0.85em;line-height:1.45;"></div>
-        </div>
-    </div>
-
-    <div id="toast" class="toast" role="status"></div>
-
-    <script src="../ms365-config.js"></script>
-    <script src="../src/tools/teams-archiv/teams-archiv.js" defer></script>
+    <p style="font-family:system-ui,sans-serif;padding:1.5rem;">Das Werkzeug liegt im <strong>Archiv</strong> (Team-Archiv ist in der <a href="schulstruktur-sync.html">MS&nbsp;365 Gruppenverwaltung</a> integriert). <a href="archiv/teams-archiv.html">Zur Archiv-Seite wechseln</a>.</p>
 </body>
 </html>

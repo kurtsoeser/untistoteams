@@ -4,6 +4,21 @@ import path from 'node:path';
 const projectRoot = path.resolve(process.cwd());
 const distRoot = path.resolve(projectRoot, 'dist');
 
+/**
+ * Ergänzt den Vite-`dist/`-Output um alles, was die MPA beim statischen Hosting
+ * noch braucht, Vite aber nicht (oder nicht vollständig) mitschreibt:
+ * - `src/**`: HTML verweist auf `src/shared/...` und Tool-Module ohne Bundling
+ *   (`<script src="...">` ohne `type="module"` bleiben externe Pfade).
+ * - Root-`app.css`: u. a. `ms365-schooltool.html` nutzt weiter `href="app.css"`
+ *   (nicht die gehashte `/assets/app-*.css` aus anderen Entry-HTMLs).
+ * - `ms365-config*.js` / `app.js`: gleicher Grund — nicht in den Rollup-Bundle
+ *   gezogen, müssen neben den HTML-Dateien liegen.
+ * - `ms365-schooltool.html`: kanonische Datei aus dem Repo-Root nach `dist/`
+ *   kopieren (Redirect/MSAL/mode-Map), damit der Build nicht von einer älteren
+ *   Vorlage abweicht.
+ * - `README.md`: optional für Deployment-Artefakte.
+ */
+
 async function exists(p) {
   try {
     await fs.access(p);
@@ -34,91 +49,20 @@ async function main() {
     throw new Error('dist/ fehlt – zuerst `vite build` ausführen.');
   }
 
-  // Ensure ms365-schooltool.html is always a small redirect page.
-  // (The actual tools live in index.html + tools/*.html)
-  const schooltoolRedirectHtml = `<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="ms365-graph-client-id" content="e1d877c3-004c-4040-8c3b-81a59e0c7050" />
-    <title>MS365-Schulverwaltung</title>
-    <link rel="stylesheet" href="app.css" />
-    <script>
-      (function () {
-        const params = new URLSearchParams(window.location.search);
-        const mode = String(params.get('mode') || '').toLowerCase().trim();
-        const map = {
-          kursteams: 'tools/kursteams.html',
-          kursteam: 'tools/kursteams.html',
-          webuntis: 'tools/kursteams.html',
-          jahrgang: 'tools/jahrgang.html',
-          arge: 'tools/arge.html',
-          gruppenerstellung: 'tools/gruppenerstellung.html',
-          grouppolicy: 'tools/gruppenerstellung.html',
-          teamsarchiv: 'tools/teams-archiv.html',
-          'teams-archiv': 'tools/teams-archiv.html',
-          gruppen: 'tools/gruppen-uebersicht.html',
-          gruppenuebersicht: 'tools/gruppen-uebersicht.html',
-          'gruppen-uebersicht': 'tools/gruppen-uebersicht.html',
-          klassen: 'tools/klassen-umbenennen.html',
-          klassenumbenennen: 'tools/klassen-umbenennen.html',
-          'klassen-umbenennen': 'tools/klassen-umbenennen.html'
-        };
-        window.location.replace(map[mode] || 'index.html');
-      })();
-    </script>
-    <noscript><meta http-equiv="refresh" content="0;url=index.html" /></noscript>
-  </head>
-  <body>
-    <div class="container" style="max-width: 1100px">
-      <div class="header">
-        <h1>MS365-Schulverwaltung</h1>
-        <p>Weiterleitung…</p>
-        <p class="header-help-row"><a href="hilfe.html" class="header-help-link">Hilfe &amp; Datenschutz</a></p>
-      </div>
-      <div class="content" style="padding-bottom: 30px">
-        <p style="color: #6c757d; line-height: 1.5">
-          Falls die Weiterleitung nicht funktioniert, öffnen Sie:
-          <a href="index.html">Dashboard</a>, <a href="tools/kursteams.html">Kursteams</a>,
-          <a href="tools/jahrgang.html">Jahrgangsgruppen</a>, <a href="tools/arge.html">ARGEs</a>,
-          <a href="tools/gruppenerstellung.html">Gruppenerstellung</a>,
-          <a href="tools/teams-archiv.html">Teams archivieren</a>,
-          <a href="tools/gruppen-uebersicht.html">Gruppenübersicht</a>,
-          <a href="tools/klassen-umbenennen.html">Klassen umbenennen</a>.
-        </p>
-      </div>
-    </div>
-  </body>
-</html>
-`;
-  await fs.writeFile(path.resolve(distRoot, 'ms365-schooltool.html'), schooltoolRedirectHtml, 'utf8');
-
-  // Root-level static files referenced by HTML
+  // Nur Dateien, die im Repo-Root existieren (Shared-Module liegen unter `src/`
+  // und werden mit `copyDirToDist('src')` mitkopiert).
   const rootFiles = [
+    'ms365-schooltool.html',
     'app.css',
     'app.js',
     'ms365-config.js',
     'ms365-config.example.js',
-    'school-domain.js',
-    'tenant-settings.js',
-    'tenant-settings-core.js',
-    'tenant-settings-ui.js',
-    'polyglot-cmd.js',
-    'jahrgang.js',
-    'arge.js',
-    'arge-graph.js',
-    'kursteam-graph.js',
-    'gruppenerstellung-policy.js',
     'README.md'
   ];
 
   for (const f of rootFiles) await copyFileToDist(f);
 
-  // Script folder(s)
-  await copyDirToDist('kursteam');
   await copyDirToDist('src');
 }
 
 await main();
-

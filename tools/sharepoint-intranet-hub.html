@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MS365-Schulverwaltung – Intranet &amp; Hub-Website</title>
+    <link rel="stylesheet" href="../app.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .spo-panel {
+            border: 1px solid var(--border, #dee2e6);
+            border-radius: 14px;
+            background: #fff;
+            padding: 16px 18px;
+            margin-bottom: 16px;
+        }
+        .spo-panel h2 { margin: 0 0 12px; font-size: 1.08em; color: #32325d; }
+        .spo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        @media (max-width: 720px) { .spo-grid { grid-template-columns: 1fr; } }
+        .spo-field label { display: block; font-weight: 700; font-size: 0.9em; margin-bottom: 6px; color: #495057; }
+        .spo-field input[type="text"], .spo-field input[type="email"], .spo-field select {
+            width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 10px; font: inherit;
+        }
+        .spo-field .hint { font-size: 0.85em; color: #6c757d; margin-top: 6px; line-height: 1.45; }
+        .spo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+        .spo-log { font-family: Consolas, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word;
+            padding: 12px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; min-height: 3em; }
+        pre.spo-pre { max-height: 220px; overflow: auto; margin: 0; padding: 12px; background: #1e1e1e; color: #d4d4d4; border-radius: 10px; font-size: 0.82em; }
+        textarea.spo-ps { width: 100%; min-height: 120px; font-family: Consolas, monospace; font-size: 0.85em; padding: 10px; border-radius: 10px; }
+        .url-preview { font-weight: 800; color: #32325d; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container page-card">
+        <div class="header">
+            <h1>MS365-Schulverwaltung</h1>
+            <div class="header-tool-indicator" aria-label="Aktuelles Werkzeug">
+                <span class="header-tool-indicator__label">Werkzeug:</span>
+                <span class="header-tool-indicator__name"><i class="bi bi-house-door"></i>SharePoint – Intranet (Kommunikationssite) &amp; Hub</span>
+            </div>
+            <p>Kommunikationswebsite per <strong>Microsoft Graph (beta)</strong> anlegen und anschließend als <strong>Hub-Website</strong> registrieren. Die Hub-Registrierung nutzt SharePoint-REST (<code>RegisterHubSite</code>) – das kann im Browser an <strong>CORS</strong> scheitern; dann das generierte <strong>PowerShell</strong> verwenden.</p>
+            <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe</a></p>
+            <div class="toolbar">
+                <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+            </div>
+        </div>
+
+        <div class="content">
+        <div class="alert alert-info" style="margin:0 0 16px;">
+            <strong>Graph:</strong> <code>Sites.Read.All</code>, <code>Sites.Create.All</code> (delegiert, Admin-Zustimmung). <strong>Hub per REST:</strong> in Entra zusätzlich <strong>Office 365 SharePoint Online</strong> → <code>Sites.FullControl.All</code> (delegiert) für <code>https://&lt;IhrHost&gt;.sharepoint.com/</code>.
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-cloud-plus"></i>1. Kommunikationssite erstellen</h2>
+            <div class="spo-grid">
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fHost">SharePoint-Host (z. B. contoso.sharepoint.com)</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                        <input type="text" id="fHost" placeholder="wird aus Graph /sites/root ermittelt" spellcheck="false" style="flex:1;min-width:220px;">
+                        <button type="button" class="btn" id="btnHost"><i class="bi bi-search"></i>Hostname ermitteln</button>
+                    </div>
+                </div>
+                <div class="spo-field">
+                    <label for="fSlug">Kurzname unter /sites/</label>
+                    <input type="text" id="fSlug" value="intranet" spellcheck="false" autocomplete="off">
+                </div>
+                <div class="spo-field">
+                    <label for="fLocale">Sprache / Gebietsschema</label>
+                    <input type="text" id="fLocale" value="de-de" spellcheck="false">
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label>Vorschau <code>webUrl</code></label>
+                    <p class="url-preview" id="fPreviewUrl">–</p>
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fTitle">Titel der Website</label>
+                    <input type="text" id="fTitle" value="Intranet" maxlength="200">
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fDesc">Beschreibung (optional)</label>
+                    <input type="text" id="fDesc" placeholder="Schulintranet" maxlength="500">
+                </div>
+                <div class="spo-field" style="grid-column:1/-1;">
+                    <label for="fOwner">Website-Besitzer (UPN / E-Mail in Entra)</label>
+                    <input type="email" id="fOwner" placeholder="admin@schule.at" autocomplete="username">
+                </div>
+                <div class="spo-field spo-field--full" style="grid-column:1/-1;">
+                    <label><input type="checkbox" id="fShareByMail"> Teilen per E-Mail für diese Site erlauben (<code>shareByEmailEnabled</code>)</label>
+                </div>
+            </div>
+            <div class="spo-actions">
+                <button type="button" class="btn btn-success" id="btnCreate"><i class="bi bi-plus-circle"></i>Site anlegen (Graph beta)</button>
+            </div>
+            <p class="hint" style="margin-top:12px;color:#6c757d;font-size:0.9em;line-height:1.5;">
+                Vorlage: <code>sitepagepublishing</code> (Kommunikationssite). Der Vorgang läuft asynchron (HTTP 202) – das Tool pollt den Status.
+            </p>
+        </div>
+
+        <div class="spo-panel">
+            <h2><i class="bi bi-diagram-3"></i>2. Als Hub-Website registrieren</h2>
+            <input type="hidden" id="fLastSiteUrl" value="">
+            <div class="spo-field" style="margin-bottom:12px;">
+                <label for="fManualUrl">Site-URL (falls manuell / bestehende Site)</label>
+                <input type="text" id="fManualUrl" placeholder="https://…sharepoint.com/sites/intranet" spellcheck="false">
+            </div>
+            <div class="spo-actions">
+                <button type="button" class="btn btn-success" id="btnHub"><i class="bi bi-link-45deg"></i>Als Hub registrieren (REST, sonst PS)</button>
+            </div>
+            <h3 style="margin:18px 0 8px;font-size:1rem;">PowerShell-Fallback</h3>
+            <textarea id="fPsHub" class="spo-ps" readonly></textarea>
+            <div class="spo-actions" style="margin-top:10px;">
+                <button type="button" class="btn" id="btnPsCopy"><i class="bi bi-clipboard"></i>Skript kopieren</button>
+            </div>
+            <pre id="fHubJson" class="spo-pre" style="margin-top:12px;">{}</pre>
+        </div>
+
+        <div class="spo-panel">
+            <h2>Protokoll</h2>
+            <div id="fLog" class="spo-log">Noch keine Aktion.</div>
+        </div>
+        <div class="spo-panel">
+            <h2>Technische Antwort (Site-Erstellung)</h2>
+            <pre id="fJson" class="spo-pre">{}</pre>
+        </div>
+        </div>
+    </div>
+
+    <script src="../ms365-config.js"></script>
+    <script type="module" src="../src/shared/msal-auth-ui.js"></script>
+    <script src="../src/tools/sharepoint/spo-graph-shared.js"></script>
+    <script src="../src/tools/sharepoint/sharepoint-intranet-hub.js" defer></script>
+</body>
+</html>

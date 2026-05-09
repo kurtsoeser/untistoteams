@@ -192,10 +192,10 @@
                         <li><a href="#tool-kursteams">Kursteams</a></li>
                         <li><a href="#tool-jahrgang">Jahrgangsgruppen</a></li>
                         <li><a href="#tool-arge">ARGEs</a></li>
-                        <li><a href="#tool-slg">Schüler:innen‑ &amp; Lehrer:innen‑Gruppen</a></li>
-                        <li><a href="#tool-gruppen-uebersicht">MS365‑Gruppen (Übersicht &amp; Bearbeiten)</a></li>
-                        <li><a href="#tool-teams-archiv">Teams archivieren</a></li>
-                        <li><a href="#tool-klassen-umbenennen">Klassen umbenennen</a></li>
+                        <li><a href="#tool-slg">Lehrerinnen &amp; Schülerinnen</a></li>
+                        <li><a href="#tool-personen-verwaltung">Personen‑Verwaltung</a></li>
+                        <li><a href="#tool-teams-archiv">Teams archivieren (Archiv)</a></li>
+                        <li><a href="#tool-klassen-umbenennen">Klassen‑Anzeigenamen (Schuljahreswechsel)</a></li>
                         <li><a href="#tool-gruppenerstellung">Gruppenerstellung einschränken</a></li>
                         <li><a href="#windows-cmd">Windows blockiert heruntergeladene .cmd?</a></li>
                         <li><a href="#datenschutz">Datenschutz</a></li>
@@ -291,11 +291,12 @@
                 </section>
 
                 <section class="tool" id="tool-arge" aria-label="ARGEs">
-                    <h3>ARGEs <span class="pill">Gruppen/Teams</span></h3>
+                    <h3>ARGEs <span class="pill">Gruppen/Teams</span> <span class="pill" style="background:#e9ecef;color:#495057;">Archiv</span></h3>
                     <p>
-                        <strong>Was macht’s?</strong> Erstellt Microsoft 365‑Gruppen für Arbeitsgemeinschaften aus einer einfachen Liste
-                        (eine Zeile pro Thema/Fach). Daraus werden <code>ARGE …</code>‑Anzeigenamen und Mail‑Nicknames (z. B. <code>arge-de</code>) generiert.
-                        Optional: Teams anbinden, SMTP per Exchange setzen, Admin zusätzlich als Besitzer.
+                        <strong>Aktuell empfohlen:</strong> ARGE‑Stammdaten und M365‑Gruppen in der <a href="einrichtung.html">Geführten Einrichtung</a> (Schritt 7) oder unter <a href="tenant.html">Schul‑Grundeinstellungen</a> → Tab ARGE.
+                    </p>
+                    <p>
+                        <strong>Legacy‑Assistent (Archiv):</strong> Mehrschritt‑Werkzeug mit Besitzern, Mitgliedern, Exchange‑SMTP, Teams und PowerShell/.cmd – für Sonderfälle weiter verfügbar.
                     </p>
                     <div class="mini-steps">
                         <strong>Mini‑Anleitung</strong>
@@ -306,86 +307,89 @@
                             <li>Einstellungen wählen (Exchange‑SMTP/Teams/Admin‑Owner) und dann online ausführen oder Script/.cmd nutzen.</li>
                         </ol>
                     </div>
-                    <p><a href="tools/arge.html">→ ARGEs öffnen</a></p>
+                    <p><a href="tools/archiv/arge.html">→ Legacy‑ARGE‑Assistent (Archiv) öffnen</a> · <a href="tools/arge.html">alte URL</a> leitet weiter.</p>
                 </section>
 
-                <section class="tool" id="tool-slg" aria-label="Schüler- und Lehrergruppen">
-                    <h3>Schüler:innen‑ &amp; Lehrer:innen‑Gruppen <span class="pill">Mitglieder synchronisieren</span></h3>
+                <section class="tool" id="tool-slg" aria-label="Lehrerinnen und Schülerinnen">
+                    <h3>Lehrerinnen &amp; Schülerinnen <span class="pill">Mitglieder synchronisieren</span></h3>
                     <p>
                         <strong>Was macht’s?</strong> Legt zwei Unified‑Gruppen (typisch <code>schueler</code> und <code>lehrer</code>) an oder nutzt bestehende Gruppen,
-                        und fügt Mitglieder aus den Schul‑Listen hinzu (Duplikate werden übersprungen). Optional kann die Gruppe auch als Team erstellt werden.
+                        und fügt Mitglieder aus den Schul‑Listen hinzu (Duplikate werden übersprungen). Als Gruppenbesitzer werden Personen mit Rolle Direktion (o. Ä.) aus der Verwaltungsliste gesetzt; fehlt diese Angabe, wird der angemeldete Benutzer Besitzer. Optional kann die Gruppe auch als Team erstellt werden.
                     </p>
                     <div class="mini-steps">
                         <strong>Mini‑Anleitung</strong>
                         <ol>
-                            <li>In den <a href="tenant.html">Schul‑Grundeinstellungen</a> Schüler/Lehrer mit gültigen E‑Mails pflegen.</li>
+                            <li>In den <a href="tenant.html">Schul‑Grundeinstellungen</a> Schüler/Lehrer mit gültigen E‑Mails pflegen; unter Verwaltung die Direktion mit E‑Mail eintragen (für Besitzerrechte an beiden Gruppen).</li>
                             <li>Im Tool anmelden, Gruppen “neu” anlegen oder “bestehend” auswählen (GUID / Suche).</li>
                             <li>Mit <strong>„Liste → Gruppe“</strong> die Mitgliedschaften synchronisieren.</li>
                             <li>Fehlende Personen bei Bedarf manuell ergänzen (eine Zeile pro UPN/E‑Mail).</li>
                         </ol>
                     </div>
                     <div class="hint">
-                        <strong>Hinweis:</strong> Entfernen von Mitgliedern macht dieses Tool nicht – dafür eignet sich die Gruppenübersicht oder das Entra‑Portal.
+                        <strong>Hinweis:</strong> Entfernen von Mitgliedern macht dieses Tool nicht – dafür eignet sich die <a href="tools/schulstruktur-sync.html">MS&nbsp;365 Gruppenverwaltung</a> oder das Entra‑Portal.
                     </div>
-                    <p><a href="tools/schueler-lehrer-gruppen.html">→ Schüler/Lehrer‑Gruppen öffnen</a></p>
+                    <p><a href="tools/schueler-lehrer-gruppen.html">→ Lehrerinnen &amp; Schülerinnen öffnen</a></p>
                 </section>
 
-                <section class="tool" id="tool-gruppen-uebersicht" aria-label="Gruppenübersicht">
-                    <h3>MS365‑Gruppen (Übersicht) <span class="pill">Lesen &amp; Bearbeiten</span></h3>
+                <section class="tool" id="tool-personen-verwaltung" aria-label="Personen-Verwaltung">
+                    <h3>Personen‑Verwaltung <span class="pill">Verzeichnis</span></h3>
                     <p>
-                        <strong>Was macht’s?</strong> Listet Unified‑Gruppen im Mandanten (inkl. Teams) mit Besitzern, Mitgliederanzahl und Erstellungsdatum.
-                        Optional können Besitzer/Mitglieder gesucht und hinzugefügt werden.
+                        <strong>Was macht’s?</strong> Liest Benutzerkonten aus Microsoft Entra (<code>/users</code>), filtert, zeigt <strong>Profil</strong> und <strong>Gruppen</strong> (direkte Mitgliedschaften).
+                        Optional: <strong>Neu</strong> (Mitglied anlegen), <strong>Bearbeiten</strong> mit <code>PATCH</code>, <strong>Konto beenden</strong>: Standard ist <strong>Deaktivieren</strong> (UPN‑Bestätigung); optional <strong>DELETE</strong> mit gesondertem Häkchen.
                     </p>
                     <div class="mini-steps">
                         <strong>Mini‑Anleitung</strong>
                         <ol>
-                            <li>Anmelden → <strong>Gruppen laden</strong>.</li>
-                            <li>Optional filterbar (nur Teams / Textfilter / Besitzerfilter) und als CSV exportierbar.</li>
-                            <li>Zum Bearbeiten: Gruppe in der Tabelle <strong>auswählen</strong> → Benutzer suchen → als Besitzer/Mitglied hinzufügen.</li>
+                            <li>Anmelden → <strong>Personen einlesen</strong>.</li>
+                            <li>Person wählen; <strong>Profil</strong> bearbeiten (Speichern) oder Tab <strong>Gruppen</strong>.</li>
+                            <li><strong>Neu</strong> für ein Organisationskonto (UPN, Anzeigename, Mail‑Nickname, Kennwort).</li>
                         </ol>
                     </div>
                     <div class="warn">
-                        <strong>Grenze:</strong> Die Namensliste zeigt aus Performance‑Gründen nur eine erste Seite (max. 40 Namen sichtbar), die Mitgliederzahl kommt separat über <code>…/members/$count</code>.
+                        <strong>Schreibzugriff:</strong> Anlegen, Profil und Kontoende (Deaktivieren oder <code>DELETE</code>) erfordern <code>User.ReadWrite.All</code> (delegiert) und passende Administratorrechte. <code>DELETE</code> ist dauerhaft – nur mit explizitem Häkchen und UPN‑Bestätigung.
                     </div>
-                    <p><a href="tools/gruppen-uebersicht.html">→ Gruppenübersicht öffnen</a></p>
+                    <p><a href="tools/personen-verwaltung.html">→ Personen‑Verwaltung öffnen</a></p>
                 </section>
 
-                <section class="tool" id="tool-teams-archiv" aria-label="Teams archivieren">
-                    <h3>Teams archivieren <span class="pill">Graph‑Aktion</span></h3>
+                <section class="tool" id="tool-teams-archiv" aria-label="Teams archivieren Archiv">
+                    <h3>Teams archivieren <span class="pill">Archiv</span> <span class="pill">Graph‑Aktion</span></h3>
                     <p>
-                        <strong>Was macht’s?</strong> Archiviert ein Microsoft Team (oder hebt die Archivierung auf). Die Team‑ID ist die GUID der zugehörigen Unified‑Gruppe.
-                        Optional kann die SharePoint‑Teamwebsite für Mitglieder schreibgeschützt gesetzt werden.
+                        <strong>Empfohlen:</strong> In der <a href="tools/schulstruktur-sync.html">MS&nbsp;365 Gruppenverwaltung</a> (Tenant‑Modus) ein Team wählen → <strong>Details</strong> → Abschnitt <strong>Team‑Archiv</strong> → <strong>Update</strong> (inkl. optionaler SharePoint‑Option).
+                    </p>
+                    <p>
+                        <strong>Legacy‑Seite (Archiv):</strong> weiterhin ein eigenständiges Formular mit Suche und Protokoll unter
+                        <a href="tools/archiv/teams-archiv.html">tools/archiv/teams-archiv.html</a> (Weiterleitung von <code>tools/teams-archiv.html</code>).
+                        Die Team‑ID ist die GUID der zugehörigen Unified‑Gruppe.
                     </p>
                     <div class="mini-steps">
-                        <strong>Mini‑Anleitung</strong>
+                        <strong>Mini‑Anleitung (Legacy‑Seite)</strong>
                         <ol>
                             <li>Team‑/Gruppen‑ID (GUID) einfügen <em>oder</em> per Anzeigename/E‑Mail suchen.</li>
                             <li>Anmelden → <strong>Team archivieren</strong> oder <strong>Archivierung aufheben</strong>.</li>
                             <li>Protokoll unten prüfen (asynchrone Operation kann etwas dauern).</li>
                         </ol>
                     </div>
-                    <p><a href="tools/teams-archiv.html">→ Teams archivieren öffnen</a></p>
+                    <p><a href="tools/archiv/teams-archiv.html">→ Teams archivieren (Archiv) öffnen</a></p>
                 </section>
 
-                <section class="tool" id="tool-klassen-umbenennen" aria-label="Klassen umbenennen">
-                    <h3>Klassen umbenennen <span class="pill">Schuljahreswechsel</span></h3>
+                <section class="tool" id="tool-klassen-umbenennen" aria-label="Klassen-Anzeigenamen Schuljahreswechsel">
+                    <h3>Klassen‑Anzeigenamen <span class="pill">Schuljahreswechsel</span></h3>
                     <p>
-                        <strong>Was macht’s?</strong> Liest Unified‑Gruppen und berechnet eine Vorschau für eine Umbenennungsregel (typisch:
-                        <code>Klasse 1A → Klasse 2A</code>). Ausgeführt wird dann ein <code>PATCH /groups</code> auf <code>displayName</code>.
-                        <strong>Mail‑Nickname und Gruppen‑E‑Mail bleiben unverändert.</strong>
+                        <strong>Empfohlen:</strong> In den <a href="tenant.html#classes">Schul‑Einstellungen</a> (Schritt „Schüler, Klassen &amp; Klassen‑Gruppen“) den Tab <strong>Klassen</strong> öffnen.
+                        Dort der Block <strong>„Klassen‑Gruppen (Microsoft 365): Anzeigename nach Schuljahreswechsel“</strong>: Vorschläge (+1), lokal speichern, ausgewählte Zeilen per Graph schreiben (<code>displayName</code> nur – <strong>Mail‑Nickname unverändert</strong>).
                     </p>
                     <div class="mini-steps">
                         <strong>Mini‑Anleitung</strong>
                         <ol>
-                            <li>Anmelden → <strong>Gruppen laden</strong> (optional “nur Teams” / Textfilter).</li>
-                            <li>Regel festlegen: Präfix (z. B. <code>Klasse</code>) und optional Bulk‑Ersetzungen.</li>
-                            <li>Vorschau berechnen und kontrollieren → erst dann ausführen.</li>
+                            <li>Schuljahr oben wählen, Tab <strong>Klassen</strong>.</li>
+                            <li>Präfix setzen → <strong>Vorschläge übernehmen</strong> → bei Bedarf „Neuer Name“ anpassen.</li>
+                            <li><strong>Neue Namen lokal speichern</strong>; für M365: Zeilen markieren → <strong>Ausgewählte in Microsoft 365 schreiben</strong> (Anmeldung im Seitenkopf).</li>
                         </ol>
                     </div>
-                    <div class="warn">
-                        <strong>Achtung:</strong> Das ist eine echte Änderung im Mandanten. Bitte die Vorschau vollständig prüfen, bevor “Jetzt umbenennen” geklickt wird.
-                    </div>
-                    <p><a href="tools/klassen-umbenennen.html">→ Klassen umbenennen öffnen</a></p>
+                    <p>
+                        <a href="tenant.html#classes">→ Schul‑Einstellungen (Tab Klassen) öffnen</a>
+                        · <a href="tools/archiv/klassen-umbenennen-wizard.html">Alter 4‑Schritt‑Assistent (Archiv)</a>
+                    </p>
                 </section>
 
                 <section class="tool" id="tool-gruppenerstellung" aria-label="Gruppenerstellung einschränken">
@@ -398,9 +402,8 @@
                     <div class="mini-steps">
                         <strong>Mini‑Anleitung</strong>
                         <ol>
-                            <li>Sicherheitsgruppe anlegen (oder vorhandene GUID eintragen / suchen).</li>
-                            <li>Mitglieder dieser Sicherheitsgruppe im Entra‑Portal verwalten.</li>
-                            <li>Im Tool anmelden → “Einschränkung anwenden” oder “Status lesen” / “Einstellung entfernen”.</li>
+                            <li>Reine Sicherheitsgruppe anlegen oder wählen (keine mail‑aktivierte Gruppe; GUID oder Suche).</li>
+                            <li>Im zweiten Schritt: Gruppe in Entra öffnen (Mitglieder/Besitzer pflegen), Kurzinfos aus Graph prüfen, im Tool anmelden und “Einschränkung anwenden” bzw. Status lesen oder Einstellung entfernen.</li>
                         </ol>
                     </div>
                     <div class="warn">

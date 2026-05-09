@@ -19,21 +19,27 @@
             <p>Steuern, wer im Mandanten einheitliche Microsoft‑365‑Gruppen erstellen darf (Richtlinien für die Gruppenerstellung).</p>
             <p class="header-help-row"><a href="../hilfe.html" class="header-help-link" target="_blank" rel="noopener"><i class="bi bi-question-circle"></i>Hilfe, Datenschutz &amp; Windows-Hinweise</a></p>
             <div class="toolbar">
-                <a class="btn" href="../index.html"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;width:100%;">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <a class="btn" href="../index.html" style="text-decoration:none;display:inline-block;"><i class="bi bi-arrow-left"></i>Dashboard</a>
+                    </div>
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></div>
+                </div>
             </div>
         </div>
 
         <div id="panelGruppenPolicy">
             <div class="steps gp-steps">
                 <div class="step active" data-gp-step="1">1. Sicherheitsgruppe</div>
-                <div class="step" data-gp-step="2">2. Mitglieder</div>
-                <div class="step" data-gp-step="3">3. Einstellung (Graph)</div>
+                <div class="step" data-gp-step="2">2. Details, Mitglieder &amp; Richtlinie</div>
             </div>
             <div class="content">
                 <div class="gp-step-content active" data-gp-step="1">
                     <h2>Schritt 1: Sicherheitsgruppe für berechtigte Ersteller</h2>
                     <div class="alert alert-info">
-                        <strong>Wie in der Doku:</strong> Es wird eine <strong>reine Sicherheitsgruppe</strong> benötigt (keine Mail-aktivierte Gruppe). Nur Mitglieder dieser Gruppe dürfen später Microsoft 365-Gruppen und Teams anlegen.
+                        <p style="margin:0 0 10px;"><strong>Wie in der Doku:</strong> Für die Einschränkung der Gruppenerstellung wird eine <strong>reine Sicherheitsgruppe</strong> benötigt – also <code>securityEnabled</code> mit <code>mailEnabled = false</code>. <strong>Keine</strong> Microsoft‑365‑Gruppe, <strong>keine</strong> E‑Mail‑Sicherheitsgruppe und <strong>keine</strong> mail‑aktivierte Sicherheitsgruppe.</p>
+                        <p style="margin:0 0 10px;">In einem späteren Schritt setzt dieses Tool die Verzeichnisrichtlinie <strong>Group.Unified</strong>: <code>EnableGroupCreation=false</code> und Ihre Gruppe als <code>GroupCreationAllowedGroupId</code>. Damit gilt: <strong>Nur Mitglieder dieser einen Sicherheitsgruppe</strong> dürfen im Mandanten noch einheitliche <strong>Microsoft‑365‑Gruppen</strong> und damit verbundene <strong>Teams</strong> anlegen (alle anderen Benutzer:innen nicht).</p>
+                        <p style="margin:0;">Die Mitgliedschaft selbst pflegen Sie wie gewohnt im <strong>Microsoft Entra Admin Center</strong> – im nächsten Schritt finden Sie Direktlinks (Allgemein, Besitzer, Mitglieder) sowie eine Kurzübersicht aus Microsoft Graph.</p>
                     </div>
                     <div class="filter-section">
                         <div class="filter-group">
@@ -56,27 +62,38 @@
                         </p>
                     </div>
                     <div class="step-nav-row step-nav-row--forward-only">
-                        <button type="button" class="btn btn-success" id="gpBtnNext1">Weiter zu Mitglieder →</button>
+                        <button type="button" class="btn btn-success" id="gpBtnNext1">Weiter zu Details &amp; Richtlinie →</button>
                     </div>
                 </div>
 
                 <div class="gp-step-content" data-gp-step="2">
-                    <h2>Schritt 2: Mitglieder zuweisen</h2>
+                    <h2>Schritt 2: Gruppe prüfen, Mitglieder und Richtlinie</h2>
                     <div class="alert alert-info">
-                        <strong>Wie in der Doku:</strong> Mitgliederverwaltung erfolgt im Admin-Portal; dieses Tool setzt die Verzeichnisrichtlinie.
+                        <p style="margin:0 0 8px;"><strong>Gruppe in Entra:</strong> Anzeigename, Beschreibung und <strong>Mitglieder/Besitzer</strong> bearbeiten Sie im Portal – wie in der <strong>MS365‑Gruppenverwaltung</strong> (Struktur links, Details rechts). Unten sind Direktlinks; die Kachel „Gruppe (Graph)“ zeigt die zuletzt gelesenen Werte aus Microsoft Graph.</p>
+                        <p style="margin:0;"><strong>Richtlinie hier:</strong> Anmeldung und Schaltflächen darunter setzen bzw. lesen die Mandanten‑Einstellung <strong>Group.Unified</strong> (wer überhaupt M365‑Gruppen/Teams anlegen darf).</p>
                     </div>
-                    <p style="color:#495057;line-height:1.5;">
-                        <a href="#" target="_blank" rel="noopener" id="gpLinkMembers" style="display:none;">Mitglieder der Gruppe (Entra)</a>
-                    </p>
-                    <div class="step-nav-row">
-                        <button type="button" class="btn" id="gpBtnBack2">← Zurück</button>
-                        <button type="button" class="btn btn-success" id="gpBtnNext2">Weiter zu Einstellung →</button>
+                    <div class="filter-section" style="margin-bottom:16px;padding:14px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;">
+                        <h3 style="margin:0 0 10px;font-size:1rem;">Gruppe in Microsoft Entra öffnen</h3>
+                        <p style="margin:0 0 10px;color:#495057;font-size:0.95em;line-height:1.5;">Entspricht den Tabs <strong>Allgemein</strong>, <strong>Besitzer</strong>, <strong>Mitglieder</strong> in der Verwaltungsoberfläche:</p>
+                        <p style="margin:0;display:flex;flex-wrap:wrap;gap:8px 14px;">
+                            <a href="#" target="_blank" rel="noopener" id="gpLinkOverview" style="display:none;"><i class="bi bi-card-text"></i> Allgemein (Übersicht)</a>
+                            <a href="#" target="_blank" rel="noopener" id="gpLinkOwners" style="display:none;"><i class="bi bi-person-badge"></i> Besitzer</a>
+                            <a href="#" target="_blank" rel="noopener" id="gpLinkMembers" style="display:none;"><i class="bi bi-people"></i> Mitglieder</a>
+                        </p>
                     </div>
-                </div>
-
-                <div class="gp-step-content" data-gp-step="3">
-                    <h2>Schritt 3: Verzeichniseinstellung setzen</h2>
-                    <div class="alert alert-warning">
+                    <div class="filter-section" style="margin-bottom:16px;padding:14px;background:#fff;border:1px solid #ced4da;border-radius:8px;">
+                        <h3 style="margin:0 0 10px;font-size:1rem;">Gruppe (Microsoft Graph)</h3>
+                        <p id="gpDetailsPlaceholder" style="margin:0;color:#6c757d;font-size:0.95em;">Wird geladen …</p>
+                        <dl id="gpDetailsDl" style="display:none;margin:0;font-size:0.95em;line-height:1.55;">
+                            <dt style="float:left;clear:left;width:11rem;color:#6c757d;">Anzeigename</dt><dd style="margin-left:11.5rem;" id="gpDetDisplayName">–</dd>
+                            <dt style="float:left;clear:left;width:11rem;color:#6c757d;">Art</dt><dd style="margin-left:11.5rem;" id="gpDetType">–</dd>
+                            <dt style="float:left;clear:left;width:11rem;color:#6c757d;">Beschreibung</dt><dd style="margin-left:11.5rem;" id="gpDetDescription">–</dd>
+                            <dt style="float:left;clear:left;width:11rem;color:#6c757d;">Mail‑Nickname</dt><dd style="margin-left:11.5rem;" id="gpDetMailNick">–</dd>
+                            <dt style="float:left;clear:left;width:11rem;color:#6c757d;">Gruppen‑ID</dt><dd style="margin-left:11.5rem;word-break:break-all;" id="gpDetId">–</dd>
+                        </dl>
+                    </div>
+                    <h3 style="margin:0 0 8px;font-size:1rem;">Verzeichnisrichtlinie (Group.Unified)</h3>
+                    <div class="alert alert-warning" style="margin-bottom:12px;">
                         <strong>Berechtigungen:</strong> Die Anmeldung benötigt <strong>Directory.ReadWrite.All</strong> (delegiert) und <strong>Administratorzustimmung</strong>.
                     </div>
                     <div class="filter-section" style="margin-bottom:16px;">
@@ -90,7 +107,7 @@
                     <h3 style="margin-top:18px;font-size:1rem;">Aktueller Status (Group.Unified)</h3>
                     <pre id="gpStatusPre" style="margin:0;padding:14px;background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;font-size:0.88em;white-space:pre-wrap;word-break:break-word;">Noch nicht gelesen – „Status lesen“ oder „Einschränkung jetzt anwenden“ wählen.</pre>
                     <div class="step-nav-row step-nav-row--back-only">
-                        <button type="button" class="btn" id="gpBtnBack3">← Zurück</button>
+                        <button type="button" class="btn" id="gpBtnBack2">← Zurück zu Schritt 1</button>
                     </div>
                 </div>
             </div>
@@ -105,6 +122,7 @@
     <div id="toast" class="toast" role="status"></div>
 
     <script src="../ms365-config.js"></script>
+    <script src="../src/shared/app-dialog.js" defer></script>
     <script src="../src/shared/tenant-settings-core.js" defer></script>
     <script src="../src/shared/tenant-settings-ui.js" defer></script>
     <script src="../src/shared/polyglot-cmd.js" defer></script>
