@@ -76,7 +76,10 @@
             const cfg = resolveMsalConfig();
             pca = new PublicClientApplication({
                 auth: { clientId: cfg.clientId, authority: cfg.authority, redirectUri: cfg.redirectUri },
-                cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: true }
+                // localStorage statt sessionStorage: ermöglicht Single-Sign-On zwischen Browser-Tabs
+                // (Microsoft 365 Anmeldung wird übernommen, wenn der Benutzer bereits in einem
+                // anderen Tab/Modul angemeldet ist).
+                cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
             });
             await pca.initialize();
             await pca.handleRedirectPromise();
@@ -88,6 +91,29 @@
             return pca;
         })();
         return initPromise;
+    }
+
+    /**
+     * Versucht eine unsichtbare Single-Sign-On-Anmeldung über die bestehende
+     * Microsoft-365-Browser-Sitzung (Hidden Iframe an login.microsoftonline.com).
+     * Funktioniert, wenn der Benutzer in einem anderen Tab/Fenster bereits angemeldet ist
+     * und Third-Party-Cookies für Microsoft erlaubt sind.
+     * Wirft NICHT bei Fehlschlag (z. B. wenn kein Account vorhanden / Cookies blockiert).
+     */
+    async function trySsoSilent(scopes) {
+        if (!pca) return null;
+        try {
+            const req = {
+                scopes: Array.isArray(scopes) && scopes.length ? scopes : DEFAULT_SCOPES
+            };
+            const result = await pca.ssoSilent(req);
+            if (result && result.account && typeof pca.setActiveAccount === 'function') {
+                pca.setActiveAccount(result.account);
+            }
+            return result;
+        } catch {
+            return null;
+        }
     }
 
     function getAccount() {
@@ -106,19 +132,32 @@
         return n || u || '';
     }
 
-    async function login(scopes) {
+    /**
+     * Anmeldung per Redirect.
+     * - Ohne opts.prompt: Microsoft entscheidet selbst (nutzt bestehende Browser-Session,
+     *   zeigt Account-Auswahl nur falls nötig). So funktioniert SSO mit anderen MS-365-Tabs.
+     * - Mit opts.prompt === 'select_account': erzwingt Account-Auswahl (z. B. zum Konto wechseln).
+     */
+    async function login(scopes, opts) {
         const instance = await ensurePca();
         try {
             sessionStorage.setItem(POST_LOGIN_KEY, window.location.href);
         } catch {
             // ignore
         }
-        await instance.loginRedirect({
+        const req = {
             scopes: Array.isArray(scopes) && scopes.length ? scopes : DEFAULT_SCOPES,
-            prompt: 'select_account',
             redirectStartPage: window.location.href
-        });
+        };
+        if (opts && typeof opts.prompt === 'string' && opts.prompt) {
+            req.prompt = opts.prompt;
+        }
+        await instance.loginRedirect(req);
         // redirect -> no further code
+    }
+
+    async function switchAccount(scopes) {
+        return login(scopes, { prompt: 'select_account' });
     }
 
     async function logout() {
@@ -283,13 +322,18 @@
         } catch {
             // ignore (widget still renders)
         }
-        setWidgetState();
+        // Wenn lokal noch kein Account im Cache ist, einmalig SSO Silent versuchen.
+        // Damit wird die Microsoft-365-Anmeldung übernommen, wenn der Benutzer
+        // in einem anderen Tab/Fenster (z. B. Outlook, Teams Web, anderes Modul) bereits
+        // angemeldet ist – ohne sichtbaren Redirect.
         try {
-            // Falls irgendwo vorher ein Post-Login-Link gesetzt war und diese Seite NICHT ms365-schooltool ist,
-            // dann bleibt der Schlüssel stehen. Wir löschen ihn hier zur Sicherheit nicht.
+            if (pca && !getAccount()) {
+                await trySsoSilent(DEFAULT_SCOPES);
+            }
         } catch {
             // ignore
         }
+        setWidgetState();
     }
 
     // Public API for tools
@@ -316,6 +360,7 @@
         }
     };
     window.ms365AuthLogin = login;
+    window.ms365AuthSwitchAccount = switchAccount;
     window.ms365AuthLogout = logout;
     window.ms365AuthAcquireToken = acquireToken;
 

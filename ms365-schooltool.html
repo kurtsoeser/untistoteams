@@ -46,7 +46,9 @@
                 authority: cfg.authority || 'https://login.microsoftonline.com/organizations',
                 redirectUri: window.location.href.split('#')[0]
               },
-              cache: { cacheLocation: 'sessionStorage', storeAuthStateInCookie: true }
+              // Muss zu msal-auth-ui.js passen, damit der Token nach dem Redirect
+              // auf den Tool-Seiten (anderer Tab/Reload möglich) wiedergefunden wird.
+              cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
             });
             await pca.initialize();
             await pca.handleRedirectPromise();

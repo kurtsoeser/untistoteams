@@ -36,128 +36,6 @@
         }
         .header p { margin: 0; opacity: 0.95; }
         .content { padding-top: 16px; }
-        .visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        .dashboard-toolbar {
-            margin: 0 0 18px;
-            padding: 14px 16px;
-            border: 1px solid #dee2e6;
-            border-radius: 12px;
-            background: linear-gradient(180deg, #fff 0%, #f8f9fa 100%);
-        }
-        .dashboard-toolbar-section-title {
-            display: block;
-            width: 100%;
-            font-size: 0.78em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #868e96;
-            margin: 0 0 10px;
-        }
-        .dashboard-toolbar-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .dashboard-toolbar-row:last-child { margin-bottom: 0; }
-        .dashboard-toolbar-search-row {
-            margin-bottom: 0;
-            padding: 4px 2px 2px;
-        }
-        .dashboard-search-input {
-            flex: 1;
-            min-width: 200px;
-            min-height: 46px;
-            padding: 12px 16px;
-            border: 1px solid #ced4da;
-            border-radius: 14px;
-            font: inherit;
-            font-size: 1em;
-            background: #fff;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-        }
-        .dashboard-search-input::placeholder {
-            color: #adb5bd;
-        }
-        .dashboard-search-input:focus {
-            outline: 2px solid rgba(94, 114, 228, 0.45);
-            outline-offset: 2px;
-            border-color: rgba(94, 114, 228, 0.35);
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 3px rgba(94, 114, 228, 0.08);
-        }
-        .dashboard-search-kbd {
-            flex-shrink: 0;
-            color: #6c757d;
-            font-size: 0.82em;
-            white-space: nowrap;
-            padding: 8px 12px;
-            border-radius: 12px;
-            background: #fff;
-            border: 1px solid #e9ecef;
-        }
-        .dashboard-search-kbd kbd {
-            display: inline-block;
-            padding: 3px 7px;
-            margin: 0 1px;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            background: #f8f9fa;
-            font-size: 0.88em;
-            font-family: inherit;
-            font-weight: 600;
-            color: #495057;
-        }
-        .dashboard-chip-row-label {
-            display: block;
-            width: 100%;
-            font-size: 0.78em;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #868e96;
-            margin-bottom: 6px;
-        }
-        .dashboard-toolbar-search-row + .dashboard-chip-row-label {
-            margin-top: 18px;
-        }
-        .dashboard-chips {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .dashboard-chip {
-            border: 1px solid #ced4da;
-            background: #fff;
-            color: #495057;
-            padding: 7px 12px;
-            border-radius: 999px;
-            font: inherit;
-            font-size: 0.9em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
-        }
-        .dashboard-chip:hover {
-            border-color: rgba(94, 114, 228, 0.35);
-            color: #32325d;
-        }
-        .dashboard-chip.is-active {
-            background: linear-gradient(135deg, rgba(94, 114, 228, 0.18) 0%, rgba(130, 94, 228, 0.12) 100%);
-            border-color: rgba(94, 114, 228, 0.45);
-            color: #32325d;
-        }
         .choice[data-tool-id] {
             position: relative;
             padding-top: 40px;
@@ -353,7 +231,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-bottom: 0;
+            margin-bottom: 12px;
             padding: 4px 4px 0;
             border-bottom: 1px solid #dee2e6;
             background: linear-gradient(180deg, #fafbfc 0%, #fff 100%);
@@ -384,13 +262,6 @@
             border-color: #dee2e6;
             border-bottom-color: #fff;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
-        }
-        .dashboard-tabs .dashboard-toolbar {
-            margin-top: 0;
-            margin-bottom: 20px;
-            padding: 18px 20px 20px;
-            border-radius: 0 0 12px 12px;
-            border-top: none;
         }
         .dashboard-tabpanel {
             padding-top: 4px;
@@ -461,23 +332,6 @@
                     <button type="button" class="dashboard-tab" role="tab" id="dash-tab-m365" aria-selected="true" aria-controls="dash-panel-m365" data-dashboard-tab="m365"><i class="bi bi-microsoft"></i> Microsoft 365</button>
                     <button type="button" class="dashboard-tab" role="tab" id="dash-tab-sharepoint" aria-selected="false" aria-controls="dash-panel-sharepoint" data-dashboard-tab="sharepoint"><i class="bi bi-share"></i> SharePoint</button>
                     <button type="button" class="dashboard-tab" role="tab" id="dash-tab-tools" aria-selected="false" aria-controls="dash-panel-tools" data-dashboard-tab="tools"><i class="bi bi-wrench-adjustable"></i> Weitere Tools</button>
-                </div>
-
-                <div class="dashboard-toolbar" role="region" aria-labelledby="dash-toolbar-search-label dashboard-cluster-label" id="dash-toolbar">
-                    <span class="dashboard-toolbar-section-title" id="dash-toolbar-search-label">Werkzeuge durchsuchen</span>
-                    <div class="dashboard-toolbar-row dashboard-toolbar-search-row">
-                        <label class="visually-hidden" for="dashboard-tool-search">Suchbegriff für Werkzeuge</label>
-                        <input type="search" id="dashboard-tool-search" class="dashboard-search-input" placeholder="Suchbegriff oder Werkzeugname …" autocomplete="off" spellcheck="false" />
-                        <span class="dashboard-search-kbd" title="Fokus Suchfeld"><kbd>Strg</kbd>+<kbd>K</kbd></span>
-                    </div>
-                    <span class="dashboard-chip-row-label" id="dashboard-cluster-label">Aufgabe</span>
-                    <div class="dashboard-chips" role="group" aria-labelledby="dashboard-cluster-label">
-                        <button type="button" class="dashboard-chip is-active" data-cluster-chip="all">Alle</button>
-                        <button type="button" class="dashboard-chip" data-cluster-chip="anlegen">Teams &amp; Gruppen anlegen</button>
-                        <button type="button" class="dashboard-chip" data-cluster-chip="wartung">Umbenennen &amp; Archiv</button>
-                        <button type="button" class="dashboard-chip" data-cluster-chip="einblick">Übersicht &amp; Abgleich</button>
-                        <button type="button" class="dashboard-chip" data-cluster-chip="exchange">Mail &amp; Richtlinien</button>
-                    </div>
                 </div>
 
                 <div class="dashboard-tabpanel" role="tabpanel" id="dash-panel-m365" aria-labelledby="dash-tab-m365">
@@ -590,7 +444,7 @@
                     </div>
                 </div>
             </div>
-            <p class="dashboard-reorder-hint" id="dashboard-reorder-hint">Tipp: Mit dem <strong>Stern</strong> wichtige Werkzeuge nach oben pinnen. Per <strong>Drag &amp; Drop</strong> sortieren (ohne aktive Suche/Filter). <strong>Strg+K</strong> fokussiert die Suche.</p>
+            <p class="dashboard-reorder-hint" id="dashboard-reorder-hint">Tipp: Mit dem <strong>Stern</strong> wichtige Werkzeuge nach oben pinnen. Per <strong>Drag &amp; Drop</strong> die Reihenfolge der Kacheln im jeweiligen Register anpassen.</p>
             <p class="note">Ein Projekt von Kurt Söser</p>
         </div>
     </div>
@@ -643,11 +497,7 @@
             const gridM365 = document.getElementById('grid-m365');
             const gridSp = document.getElementById('grid-sp');
             const gridTools = document.getElementById('grid-tools');
-            const searchInput = document.getElementById('dashboard-tool-search');
-            const reorderHint = document.getElementById('dashboard-reorder-hint');
             if (!gridM365 || !gridSp) return;
-
-            let activeCluster = 'all';
 
             function gridForTab(tab) {
                 if (tab === 'm365') return gridM365;
@@ -826,32 +676,16 @@
                 saveFavoritesOrder(favoriteOrderFollowingGrids());
             }
 
-            function isFilterActive() {
-                const q = (searchInput && searchInput.value) || '';
-                return String(q).trim().length > 0 || activeCluster !== 'all';
-            }
-
             function panelVisible(card) {
                 const panel = card.closest('[role="tabpanel"]');
                 return panel && !panel.hidden;
             }
 
-            function applySearchAndChips() {
-                const q = searchInput ? String(searchInput.value).trim().toLowerCase() : '';
+            function syncDraggableState() {
                 getAllToolCards().forEach(function (card) {
-                    const cluster = card.getAttribute('data-cluster') || '';
-                    const matchCluster =
-                        activeCluster === 'all' || !cluster || cluster === activeCluster;
-                    const text = (card.textContent || '').toLowerCase().replace(/\s+/g, ' ');
-                    const matchQ = !q || text.indexOf(q) !== -1;
-                    card.hidden = !(matchCluster && matchQ);
+                    card.hidden = false;
+                    card.draggable = panelVisible(card);
                 });
-                getAllToolCards().forEach(function (card) {
-                    card.draggable = !isFilterActive() && panelVisible(card);
-                });
-                if (reorderHint) {
-                    reorderHint.style.display = isFilterActive() ? 'none' : '';
-                }
             }
 
             function setFavorite(id, on) {
@@ -930,7 +764,7 @@
 
                     card.addEventListener('dragend', function () {
                         clearDragClasses();
-                        if (!isFilterActive()) saveOrderForTab(getTabForCard(card));
+                        saveOrderForTab(getTabForCard(card));
                     });
 
                     card.addEventListener('dragover', function (e) {
@@ -957,7 +791,7 @@
                         if (!dragging || dragging === card || dragging.parentElement !== gridEl) return;
                         card.classList.remove('drag-over');
                         gridEl.insertBefore(dragging, card);
-                        if (!isFilterActive()) saveOrderForTab(getTabForCard(card));
+                        saveOrderForTab(getTabForCard(card));
                     });
                 });
             }
@@ -1041,7 +875,7 @@
             applyAllOrders();
             injectFavoriteButtons();
             enableDnD();
-            applySearchAndChips();
+            syncDraggableState();
         })();
 
         (function () {
