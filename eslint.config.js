@@ -39,7 +39,16 @@ export default [
             ],
             'no-empty': ['warn', { allowEmptyCatch: true }],
             'no-irregular-whitespace': 'off',
-            'no-useless-escape': 'off'
+            'no-useless-escape': 'off',
+            /**
+             * Sichtbarmachen historisch gewachsener Monolithen.
+             * Siehe src/shared/ARCHITECTURE.md – Ziel: keine neuen Dateien > 600 Zeilen.
+             * Warn statt Error, damit bestehende große Dateien den Build nicht brechen.
+             */
+            'max-lines': [
+                'warn',
+                { max: 650, skipBlankLines: true, skipComments: true }
+            ]
         }
     },
     {
@@ -49,6 +58,10 @@ export default [
                 ...globals.node,
                 ...vitestGlobals
             }
+        },
+        rules: {
+            /** Tests dürfen lang sein. */
+            'max-lines': 'off'
         }
     }
 ];

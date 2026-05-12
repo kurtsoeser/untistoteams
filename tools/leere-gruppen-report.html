@@ -31,6 +31,11 @@
             line-height: 1.45;
             margin-bottom: 14px;
         }
+        .hint-warn {
+            background: linear-gradient(180deg, #fff5f5 0%, #fff 100%);
+            border-color: rgba(245, 101, 101, 0.35);
+            color: #7b2929;
+        }
         .lgr-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -41,11 +46,179 @@
         .lgr-toolbar label { font-weight: 700; color: #495057; font-size: 0.92em; display: block; margin-bottom: 4px; }
         .lgr-toolbar select { padding: 9px 12px; border-radius: 10px; border: 1px solid #ced4da; font: inherit; min-width: 220px; }
         .lgr-toolbar .btn { margin: 0; }
+
+        /* Filter-Leiste oberhalb der Tabelle */
+        .lgr-filterbar {
+            display: grid;
+            grid-template-columns: 1fr 220px 220px;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 800px) {
+            .lgr-filterbar { grid-template-columns: 1fr; }
+        }
+        .lgr-filterbar input,
+        .lgr-filterbar select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        /* Bulk-Aktionsleiste */
+        .lgr-bulkbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0 0 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 101, 101, 0.35);
+            background: linear-gradient(180deg, #fff5f5 0%, #fff 100%);
+            color: #7b2929;
+            box-shadow: 0 2px 8px rgba(229, 62, 62, 0.06);
+        }
+        .lgr-bulkbar[hidden] { display: none !important; }
+        .lgr-bulkbar-info { display: inline-flex; align-items: center; gap: 8px; font-size: 0.95em; }
+        .lgr-bulkbar-info .bi { font-size: 1.1em; }
+        .lgr-bulkbar-info .muted { color: #9b2c2c; opacity: 0.75; font-size: 0.88em; }
+        .lgr-bulkbar-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+        .lgr-bulkbar-actions .btn { margin: 0; }
+
         .lgr-table-wrap { overflow: auto; max-height: 62vh; border: 1px solid var(--border); border-radius: 12px; }
         table.lgr-table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
         table.lgr-table th, table.lgr-table td { padding: 8px 10px; border-bottom: 1px solid #f0f1f3; text-align: left; vertical-align: top; }
         table.lgr-table th { background: #fafbff; font-weight: 800; color: #32325d; position: sticky; top: 0; z-index: 1; }
+        table.lgr-table th.is-sortable { cursor: pointer; user-select: none; }
+        table.lgr-table th.is-sortable:hover { background: #eef1ff; }
+        table.lgr-table .lgr-sort-ind { opacity: 0.95; margin-left: 6px; font-weight: 900; }
+        table.lgr-table tbody tr.is-selected { background: #fff5f5; }
+        table.lgr-table tbody tr.is-selected td { border-bottom-color: #fed7d7; }
+        table.lgr-table .lgr-col-select { width: 38px; text-align: center; }
+        table.lgr-table .lgr-col-actions { width: 70px; text-align: right; }
+        table.lgr-table .num { text-align: right; }
+
+        .lgr-checkbox-label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .lgr-checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #e53e3e;
+        }
+        .lgr-checkbox-label input[type="checkbox"]:disabled { cursor: not-allowed; opacity: 0.4; }
+
+        .lgr-row-delete {
+            padding: 6px 10px;
+            margin: 0;
+            font-size: 0.88em;
+            border-radius: 8px;
+        }
+
         .check-inline { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #495057; margin-left: 12px; }
+
+        /* Badges für Gruppentyp */
+        .lgr-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.78em;
+            font-weight: 700;
+            line-height: 1.5;
+            margin-right: 4px;
+            background: #e2e8f0;
+            color: #2d3748;
+            white-space: nowrap;
+        }
+        .lgr-badge.is-m365 { background: #cffafe; color: #075985; }
+        .lgr-badge.is-team { background: #ddd6fe; color: #4c1d95; }
+        .lgr-badge.is-security { background: #fef3c7; color: #92400e; }
+        .lgr-badge.is-mail { background: #c6f6d5; color: #22543d; }
+
+        /* Modal */
+        .lgr-modal-backdrop {
+            position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        .lgr-modal-backdrop.is-open { display: flex; }
+        .lgr-modal {
+            background: #fff;
+            border-radius: 14px;
+            max-width: 620px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+        }
+        .lgr-modal-head {
+            padding: 14px 18px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .lgr-modal-head h3 { margin: 0; font-size: 1.05em; color: #32325d; }
+        .lgr-modal-body { padding: 16px 18px; }
+        .lgr-modal-foot {
+            padding: 12px 18px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #fafbff;
+        }
+        .lgr-field { margin-bottom: 12px; }
+        .lgr-field label {
+            display: block;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+        .lgr-field input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 10px;
+            font: inherit;
+            box-sizing: border-box;
+        }
+        .lgr-field input:disabled { background: #f1f3f5; color: #6c757d; }
+        .lgr-delete-confirm-list {
+            margin: 8px 0 14px;
+            padding: 10px 12px;
+            border: 1px solid #fed7d7;
+            border-radius: 10px;
+            background: #fff5f5;
+            max-height: 240px;
+            overflow: auto;
+            font-size: 0.92em;
+            line-height: 1.5;
+        }
+        .lgr-delete-confirm-list ul { margin: 4px 0 0; padding-left: 20px; }
+        .lgr-modal-close {
+            background: transparent;
+            border: 0;
+            font-size: 1.4em;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0 4px;
+        }
+        .lgr-modal-close:hover { color: #212529; }
     </style>
 </head>
 <body data-ms365-skip-tenant-domain-prompt="true">
@@ -75,6 +248,9 @@
                     <div class="hint">
                         <strong>Datenschutz / Tenants:</strong> Es werden nur Metadaten aus Microsoft Graph gelesen. Für den Tenant braucht die App die delegierte Berechtigung <code>Group.Read.All</code> (oder breiter, z. B. <code>Group.ReadWrite.All</code>). Die Auswertung kann bei vielen Gruppen einige Minuten dauern (pro Gruppe zwei Zähl-Abfragen).
                     </div>
+                    <div class="hint hint-warn">
+                        <strong>Achtung beim Löschen:</strong> Das <strong>Löschen</strong> von Gruppen erfordert zusätzlich die Berechtigung <code>Group.ReadWrite.All</code> sowie eine passende Entra-Rolle (z. B. Gruppen­administrator, Teams­administrator, Globaler Administrator). Gelöschte Microsoft-365-Gruppen / Teams werden in den Entra-Papierkorb verschoben und können dort ca. <strong>30 Tage</strong> wiederhergestellt werden. Sicherheits- und Verteilergruppen werden hingegen <strong>sofort und endgültig</strong> entfernt. Eine eigene Sicherheits-Abfrage verhindert ungewolltes Löschen.
+                    </div>
                     <div class="lgr-toolbar">
                         <div>
                             <label for="lgrScope">Gruppenumfang</label>
@@ -87,19 +263,58 @@
                         </div>
                         <button type="button" class="btn btn-success" id="lgrBtnRun"><i class="bi bi-play-fill"></i>Analyse starten</button>
                         <button type="button" class="btn" id="lgrBtnCsv" disabled><i class="bi bi-download"></i>CSV (Semikolon)</button>
-                        <label class="check-inline"><input type="checkbox" id="lgrFilterProblem"> Nur auffällige Zeilen (ohne Besitzer oder ohne Mitglieder)</label>
+                        <span id="lgrResultCount" class="muted" style="margin-left:auto;font-size:0.92em;"></span>
                     </div>
+
+                    <div class="lgr-filterbar">
+                        <input type="search" id="lgrSearch" placeholder="Suche (Name, E-Mail, Typ, Hinweise) …" autocomplete="off" disabled>
+                        <select id="lgrFilterKind" aria-label="Typ filtern" disabled>
+                            <option value="all">Typ: alle</option>
+                            <option value="m365">Nur Microsoft-365-Gruppen</option>
+                            <option value="team">Nur Teams</option>
+                            <option value="security">Nur Sicherheitsgruppen</option>
+                            <option value="mail">Nur Verteilergruppen (Mail)</option>
+                            <option value="other">Sonstige</option>
+                        </select>
+                        <select id="lgrFilterProblem" aria-label="Problemfilter" disabled>
+                            <option value="all">Anzeige: alle Zeilen</option>
+                            <option value="problem">Nur auffällige (ohne Besitzer oder Mitglieder)</option>
+                            <option value="no-owners">Nur ohne Besitzer</option>
+                            <option value="no-members">Nur ohne Mitglieder</option>
+                            <option value="empty">Nur ohne Besitzer und Mitglieder</option>
+                        </select>
+                    </div>
+
+                    <div class="lgr-bulkbar" id="lgrBulkBar" hidden>
+                        <div class="lgr-bulkbar-info">
+                            <i class="bi bi-check2-square"></i>
+                            <strong><span id="lgrBulkCount">0</span></strong>
+                            <span>ausgewählt</span>
+                            <span class="muted" id="lgrBulkHint"></span>
+                        </div>
+                        <div class="lgr-bulkbar-actions">
+                            <button type="button" class="btn" id="lgrBulkClear" title="Auswahl aufheben"><i class="bi bi-x-circle"></i>Auswahl aufheben</button>
+                            <button type="button" class="btn btn-danger" id="lgrBulkDelete"><i class="bi bi-trash"></i>Markierte Gruppen löschen</button>
+                        </div>
+                    </div>
+
                     <div id="lgrProgress" class="hint" style="display:none; margin-bottom:12px;"></div>
                     <div class="lgr-table-wrap">
                         <table class="lgr-table" aria-label="Ergebnistabelle">
                             <thead>
                                 <tr>
-                                    <th>Anzeigename</th>
-                                    <th>E-Mail</th>
-                                    <th>Typ</th>
-                                    <th>Besitzer</th>
-                                    <th>Mitglieder</th>
-                                    <th>Hinweise</th>
+                                    <th class="lgr-col-select">
+                                        <label class="lgr-checkbox-label" title="Alle aktuell sichtbaren auswählen">
+                                            <input type="checkbox" id="lgrSelectAll" aria-label="Alle aktuell sichtbaren auswählen" disabled>
+                                        </label>
+                                    </th>
+                                    <th class="is-sortable" data-sort-key="displayName">Anzeigename</th>
+                                    <th class="is-sortable" data-sort-key="mail">E-Mail</th>
+                                    <th class="is-sortable" data-sort-key="kind">Typ</th>
+                                    <th class="is-sortable num" data-sort-key="owners">Besitzer</th>
+                                    <th class="is-sortable num" data-sort-key="members">Mitglieder</th>
+                                    <th class="is-sortable" data-sort-key="flags">Hinweise</th>
+                                    <th class="lgr-col-actions">Aktion</th>
                                 </tr>
                             </thead>
                             <tbody id="lgrTbody"></tbody>
@@ -110,8 +325,75 @@
         </div>
     </div>
 
+    <!-- Modal: Einzelne Gruppe löschen -->
+    <div class="lgr-modal-backdrop" id="lgrDeleteModal" role="dialog" aria-modal="true" aria-labelledby="lgrDeleteTitle">
+        <div class="lgr-modal">
+            <div class="lgr-modal-head">
+                <h3 id="lgrDeleteTitle"><i class="bi bi-exclamation-triangle"></i> Gruppe löschen</h3>
+                <button type="button" class="lgr-modal-close" data-lgr-close="delete" aria-label="Schließen">&times;</button>
+            </div>
+            <div class="lgr-modal-body">
+                <p style="margin:0 0 10px;line-height:1.5;">
+                    Sie sind im Begriff, die folgende Gruppe zu <strong>löschen</strong>. Microsoft-365-Gruppen / Teams gehen in den Entra-Papierkorb (ca. 30 Tage Wiederherstellung), andere Gruppen werden sofort und endgültig entfernt.
+                </p>
+                <div class="lgr-field">
+                    <label>Anzeigename</label>
+                    <input type="text" id="lgrDelDisplay" disabled>
+                </div>
+                <div class="lgr-field">
+                    <label>E-Mail / Typ</label>
+                    <input type="text" id="lgrDelMail" disabled>
+                </div>
+                <div class="lgr-field">
+                    <label for="lgrDelConfirm">Zur Bestätigung den <strong>Anzeigenamen</strong> exakt eintippen:</label>
+                    <input type="text" id="lgrDelConfirm" autocomplete="off" placeholder="Anzeigename hier eintippen">
+                </div>
+                <div id="lgrDelError" class="muted" style="color:#9b2c2c;font-size:0.9em;"></div>
+            </div>
+            <div class="lgr-modal-foot">
+                <button type="button" class="btn" data-lgr-close="delete">Abbrechen</button>
+                <button type="button" class="btn btn-danger" id="lgrDelExecute" disabled><i class="bi bi-trash"></i>Endgültig löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Mehrere Gruppen auf einmal löschen -->
+    <div class="lgr-modal-backdrop" id="lgrBulkDeleteModal" role="dialog" aria-modal="true" aria-labelledby="lgrBulkDelTitle">
+        <div class="lgr-modal" style="max-width:720px;">
+            <div class="lgr-modal-head">
+                <h3 id="lgrBulkDelTitle"><i class="bi bi-exclamation-triangle"></i> <span id="lgrBulkDelTitleText">Mehrere Gruppen löschen</span></h3>
+                <button type="button" class="lgr-modal-close" data-lgr-close="bulk" aria-label="Schließen">&times;</button>
+            </div>
+            <div class="lgr-modal-body">
+                <p style="margin:0 0 10px;line-height:1.5;">
+                    Sie sind im Begriff, <strong><span id="lgrBulkDelCountText">0</span></strong> Gruppe(n) zu <strong>löschen</strong>. Microsoft-365-Gruppen / Teams gehen in den Entra-Papierkorb (ca. 30 Tage Wiederherstellung), andere Gruppen werden <strong>sofort und endgültig</strong> entfernt.
+                </p>
+                <div class="lgr-delete-confirm-list" id="lgrBulkDelList" aria-live="polite"></div>
+                <div class="lgr-field">
+                    <label for="lgrBulkDelConfirm">Zur Bestätigung das Wort <code>LÖSCHEN</code> exakt eintippen:</label>
+                    <input type="text" id="lgrBulkDelConfirm" autocomplete="off" placeholder="LÖSCHEN">
+                </div>
+                <div id="lgrBulkDelProgressWrap" style="display:none;margin-top:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                        <strong style="font-size:0.92em;color:#495057;">Fortschritt</strong>
+                        <span class="muted" id="lgrBulkDelProgressText" style="font-size:0.88em;">0 / 0</span>
+                    </div>
+                    <div style="height:10px;border-radius:6px;background:#f1f3f5;overflow:hidden;border:1px solid #e9ecef;">
+                        <div id="lgrBulkDelProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#e53e3e,#f56036);transition:width 200ms ease;"></div>
+                    </div>
+                </div>
+                <div id="lgrBulkDelError" class="muted" style="color:#9b2c2c;font-size:0.9em;margin-top:10px;line-height:1.4;"></div>
+            </div>
+            <div class="lgr-modal-foot">
+                <button type="button" class="btn" data-lgr-close="bulk" id="lgrBulkDelCancel">Abbrechen</button>
+                <button type="button" class="btn btn-danger" id="lgrBulkDelExecute" disabled><i class="bi bi-trash"></i>Endgültig löschen</button>
+            </div>
+        </div>
+    </div>
+
     <script src="../ms365-config.js"></script>
     <script type="module" src="../src/shared/msal-auth-ui.js"></script>
-    <script src="../src/tools/leere-gruppen-report/leere-gruppen-report.js" defer></script>
+    <script src="../src/tools/leere-gruppen-report/leere-gruppen-core.js" defer></script>
+    <script type="module" src="../src/tools/leere-gruppen-report/leere-gruppen-report.js"></script>
 </body>
 </html>

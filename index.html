@@ -381,10 +381,10 @@
                     <p>Gruppen/Teams mit Besitzer- und Mitgliederzahl aus Microsoft Graph (lesend). Keine Nutzungsmetriken – dafür Admin-Berichte nutzen.</p>
                     <a class="btn" href="tools/leere-gruppen-report.html"><i class="bi bi-search"></i>Report öffnen</a>
                 </section>
-                <section class="choice" role="listitem" aria-label="Gast-Zugänge und Externe" data-tool-id="gast-zugaenge" data-cluster="einblick" data-stack="m365" draggable="true">
-                    <h2><i class="bi bi-person-plus"></i>Gast-Zugänge &amp; Externe</h2>
-                    <p>Teams mit Gast-Mitgliedern und optional B2B-/Gast-Einladungen aus dem Verzeichnis-Audit einsehen (lesend, DSGVO-Hinweise in der Oberfläche).</p>
-                    <a class="btn" href="tools/gast-zugaenge.html"><i class="bi bi-shield-check"></i>Übersicht öffnen</a>
+                <section class="choice" role="listitem" aria-label="Gäste verwalten" data-tool-id="gaeste-verwalten" data-cluster="einblick" data-stack="m365" draggable="true">
+                    <h2><i class="bi bi-people"></i>Gäste verwalten</h2>
+                    <p>Zentrales Werkzeug für externe Konten mit vier Unterbereichen: <strong>Teams mit Gast-Mitgliedern</strong>, <strong>B2B-/Gast-Einladungen</strong> aus dem Verzeichnis-Audit, <strong>alle Gäste im Tenant</strong> (umbenennen, löschen) und <strong>Gast-Einlader (Berechtigung)</strong> über <code>authorizationPolicy.allowInvitesFrom</code> und die Rolle „Gasteinladende:r“.</p>
+                    <a class="btn" href="tools/gaeste-verwalten.html"><i class="bi bi-shield-check"></i>Werkzeug öffnen</a>
                 </section>
                 <section class="choice" role="listitem" aria-label="Freigegebene Postfächer" data-tool-id="postfaecher" data-cluster="exchange" data-stack="m365" draggable="true">
                     <h2><i class="bi bi-inbox"></i>Freigegebene Postfächer</h2>
@@ -477,7 +477,7 @@
                 'organisations-assistent',
                 'abgleichen',
                 'leere-gruppen-report',
-                'gast-zugaenge',
+                'gaeste-verwalten',
                 'postfaecher',
                 'verteilerlisten',
                 'gruppenerstellung'
@@ -825,7 +825,7 @@
                     }
                 });
 
-                applySearchAndChips();
+                syncDraggableState();
             }
 
             document.querySelectorAll('[data-dashboard-tab]').forEach(function (btn) {
@@ -833,32 +833,6 @@
                     const t = btn.getAttribute('data-dashboard-tab') || 'm365';
                     setActiveTab(t);
                 });
-            });
-
-            document.querySelectorAll('[data-cluster-chip]').forEach(function (chipBtn) {
-                chipBtn.addEventListener('click', function () {
-                    document.querySelectorAll('[data-cluster-chip]').forEach(function (b) {
-                        b.classList.toggle('is-active', b === chipBtn);
-                    });
-                    activeCluster = chipBtn.getAttribute('data-cluster-chip') || 'all';
-                    applySearchAndChips();
-                });
-            });
-
-            if (searchInput) {
-                searchInput.addEventListener('input', applySearchAndChips);
-            }
-
-            document.addEventListener('keydown', function (e) {
-                if (!searchInput) return;
-                if (e.defaultPrevented) return;
-                if (e.ctrlKey && (e.key === 'k' || e.key === 'K')) {
-                    const t = e.target;
-                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-                    e.preventDefault();
-                    searchInput.focus();
-                    searchInput.select();
-                }
             });
 
             migrateLegacyOrderOnce();

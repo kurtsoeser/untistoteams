@@ -197,6 +197,7 @@
                         <li><a href="#tool-teams-archiv">Teams archivieren (Archiv)</a></li>
                         <li><a href="#tool-klassen-umbenennen">Klassen‑Anzeigenamen (Schuljahreswechsel)</a></li>
                         <li><a href="#tool-gruppenerstellung">Gruppenerstellung einschränken</a></li>
+                        <li><a href="#tool-gaeste-verwalten">Gäste verwalten</a></li>
                         <li><a href="#windows-cmd">Windows blockiert heruntergeladene .cmd?</a></li>
                         <li><a href="#datenschutz">Datenschutz</a></li>
                     </ul>
@@ -410,6 +411,41 @@
                         <strong>Berechtigungen:</strong> benötigt u. a. <code>Directory.ReadWrite.All</code> (delegiert) und Admin‑Zustimmung.
                     </div>
                     <p><a href="tools/gruppenerstellung.html">→ Gruppenerstellung einschränken öffnen</a></p>
+                </section>
+
+                <section class="tool" id="tool-gaeste-verwalten" aria-label="Gäste verwalten">
+                    <h3>Gäste verwalten <span class="pill">Externe Konten</span> <span class="pill">Authorization Policy + Rolle</span></h3>
+                    <p>
+                        <strong>Was macht’s?</strong> Bündelt alle Aufgaben rund um <strong>externe Konten (Gäste)</strong> im Mandanten in einem Werkzeug mit vier Registerkarten:
+                    </p>
+                    <ol style="margin:0 0 10px 1.2em;line-height:1.55;">
+                        <li><strong>Teams mit Gast‑Mitgliedern</strong> – Übersicht, in welchen Teams Gäste enthalten sind (lesend, <code>Group.Read.All</code>).</li>
+                        <li><strong>B2B‑/Gast‑Einladungen (Verzeichnis‑Audit)</strong> – protokollierte Vorgänge wie „Invite external user“ aus dem Entra‑Audit (lesend, zusätzlich <code>AuditLog.Read.All</code>; <code>GET /invitations</code> existiert in Graph nicht).</li>
+                        <li><strong>Alle Gäste im Tenant</strong> – schreibender Bereich: Gast‑Konten suchen/filtern, <strong>umbenennen</strong>, Firma/Funktion pflegen, <strong>dauerhaft löschen</strong> (mit UPN‑Bestätigung). Benötigt <code>User.ReadWrite.All</code>.</li>
+                        <li><strong>Gast‑Einlader (Berechtigung)</strong> – tenantweit festlegen, wer Gäste einladen darf: <code>authorizationPolicy.allowInvitesFrom = adminsAndGuestInviters</code> + Rolle <strong>„Gasteinladende:r“</strong> (englisch <em>Guest Inviter</em>) einer rollenfähigen Sicherheitsgruppe zuweisen.</li>
+                    </ol>
+                    <div class="mini-steps">
+                        <strong>Mini‑Anleitung „Gast‑Einlader“ (Register 4)</strong>
+                        <ol>
+                            <li>Schritt 1: Rollenfähige Sicherheitsgruppe anlegen (Knopf im Tool) oder bestehende per GUID/Namen wählen.</li>
+                            <li>Schritt 2: Anmelden, <strong>Status lesen</strong>, dann <strong>„Einschränkung jetzt anwenden“</strong>. Das setzt die Tenant‑Einstellung und weist der Gruppe die Rolle zu.</li>
+                            <li>Bei <strong>nicht rollenfähigen</strong> oder <strong>mail‑aktivierten</strong> Sicherheitsgruppen: Fallback „<strong>Mitglieder ↔ Rolle synchronisieren</strong>“ fügt jedes Mitglied einzeln der Rolle hinzu (optional auch aufräumen).</li>
+                            <li>Zum Rückbau: <code>allowInvitesFrom</code> auf <code>everyone</code> zurücksetzen oder Gruppe aus der Rolle entfernen.</li>
+                        </ol>
+                    </div>
+                    <div class="warn">
+                        <strong>Berechtigungen (delegiert, Admin‑Zustimmung):</strong>
+                        Lesend: <code>Group.Read.All</code>, <code>AuditLog.Read.All</code>, <code>User.Read.All</code>.
+                        Schreibend: <code>User.ReadWrite.All</code> (Gäste verwalten),
+                        <code>Policy.ReadWrite.Authorization</code>, <code>RoleManagement.ReadWrite.Directory</code>, <code>Group.ReadWrite.All</code> (Berechtigung).
+                    </div>
+                    <div class="hint">
+                        <strong>DSGVO:</strong> Gast‑UPNs/Namen sind personenbezogen. Exporte (CSV) nur speichern, wenn Ihre Organisation das erlaubt; ein Löschen entfernt das Gast‑Konto dauerhaft und entzieht alle Berechtigungen.
+                    </div>
+                    <div class="hint">
+                        <strong>Hinweis (Register 4):</strong> Rollenfähige Gruppen müssen reine Sicherheitsgruppen sein (<code>securityEnabled=true</code>, <code>mailEnabled=false</code>). Mail‑aktivierte Sicherheitsgruppen können in Entra eine Verzeichnisrolle nicht direkt tragen – dafür gibt es den Fallback (Mitglieder einzeln).
+                    </div>
+                    <p><a href="tools/gaeste-verwalten.html">→ Gäste verwalten öffnen</a></p>
                 </section>
 
                 <h2 id="windows-cmd">Windows blockiert heruntergeladene .cmd?</h2>

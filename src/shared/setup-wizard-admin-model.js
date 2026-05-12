@@ -1,7 +1,16 @@
 /**
- * Verwaltungs-/Admin-Datenmodell und kleine String-Helfer für den Einrichtungs-Assistenten.
+ * Verwaltungs-/Admin-Datenmodell für den Einrichtungs-Assistenten.
  * Aus setup-wizard.js ausgelagert (gleiches Verhalten).
+ *
+ * Die String-Helper (`normStr`, `normEmail`, `normCode`, `escapeHtml`) werden
+ * aus `./utils/strings.js` re-exportiert, damit bestehende Imports
+ * `import { normStr } from '.../setup-wizard-admin-model.js'` weiterhin
+ * funktionieren. Neue Aufrufer sollten direkt aus `utils/strings.js` importieren.
  */
+
+export { normStr, normEmail, normCode, escapeHtml } from './utils/strings.js';
+
+import { normStr, normEmail } from './utils/strings.js';
 
 export const SW_ADMIN_DEFAULT_ROLES = [
     'Direktion',
@@ -12,28 +21,6 @@ export const SW_ADMIN_DEFAULT_ROLES = [
     'IT-Support',
     'Bibliothek'
 ];
-
-export function normStr(v) {
-    return String(v ?? '').trim();
-}
-
-export function normEmail(v) {
-    return normStr(v).toLowerCase();
-}
-
-export function escapeHtml(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-export function normCode(v) {
-    return String(v ?? '')
-        .trim()
-        .toUpperCase();
-}
 
 /** Kanonischer Standard-Slot nur bei gesetztem defaultKey (vermeidet Kollision mit freier Rolle „Direktion“). */
 export function resolveAdminSlotFromRow(row) {

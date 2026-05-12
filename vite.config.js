@@ -44,7 +44,9 @@ export default defineConfig(() => {
           personenVerwaltung: resolve(__dirname, 'tools/personen-verwaltung.html'),
           verteilerlisten: resolve(__dirname, 'tools/verteilerlisten.html'),
           leereGruppenReport: resolve(__dirname, 'tools/leere-gruppen-report.html'),
-          gastZugaenge: resolve(__dirname, 'tools/gast-zugaenge.html'),
+          gaesteVerwalten: resolve(__dirname, 'tools/gaeste-verwalten.html'),
+          gastZugaengeLegacyRedirect: resolve(__dirname, 'tools/gast-zugaenge.html'),
+          gastEinladerLegacyRedirect: resolve(__dirname, 'tools/gast-einlader.html'),
           organisationsAssistent: resolve(__dirname, 'tools/organisations-assistent.html'),
           sharepointListeLehrer: resolve(__dirname, 'tools/sharepoint-liste-lehrer.html'),
           sharepointListeSchultermine: resolve(__dirname, 'tools/sharepoint-liste-schultermine.html')

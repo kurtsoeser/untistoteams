@@ -59,11 +59,35 @@
     }
 
     function isInteractionRequired(e) {
+        if (!e) return false;
+        if (e.name === 'InteractionRequiredAuthError') return true;
+        const code = String(e.errorCode || '').toLowerCase();
+        if (
+            code === 'interaction_required' ||
+            code === 'consent_required' ||
+            code === 'login_required' ||
+            code === 'invalid_grant' ||
+            code === 'no_account_in_silent_request' ||
+            code === 'no_tokens_found' ||
+            code === 'monitor_window_timeout' ||
+            code === 'native_account_unavailable'
+        ) {
+            return true;
+        }
+        const msg = String((e && e.message) || '').toLowerCase();
         return (
-            e &&
-            (e.name === 'InteractionRequiredAuthError' ||
-                e.errorCode === 'interaction_required' ||
-                (typeof e.message === 'string' && e.message.indexOf('interaction_required') !== -1))
+            msg.indexOf('interaction_required') !== -1 ||
+            msg.indexOf('consent_required') !== -1 ||
+            msg.indexOf('login_required') !== -1 ||
+            msg.indexOf('invalid_grant') !== -1 ||
+            msg.indexOf('aadsts65001') !== -1 || // Consent fehlt
+            msg.indexOf('aadsts50058') !== -1 || // Sitzung verloren
+            msg.indexOf('aadsts70008') !== -1 || // Refresh-Token abgelaufen
+            msg.indexOf('aadsts50173') !== -1 || // Refresh-Token widerrufen
+            msg.indexOf('aadsts50076') !== -1 || // MFA nötig
+            msg.indexOf('aadsts50079') !== -1 || // MFA registration nötig
+            msg.indexOf('aadsts700084') !== -1 || // Cookie hash mismatch
+            msg.indexOf('token contains an invalid signature') !== -1
         );
     }
 
@@ -171,6 +195,64 @@
         await instance.logoutRedirect({ account: a || undefined, postLogoutRedirectUri: window.location.href.split('#')[0] });
     }
 
+    function looksLikeBrokenCache(e) {
+        if (!e) return false;
+        const msg = String((e && e.message) || '').toLowerCase();
+        return (
+            msg.indexOf('token contains an invalid signature') !== -1 ||
+            msg.indexOf('invalid_grant') !== -1 ||
+            msg.indexOf('aadsts70008') !== -1 ||
+            msg.indexOf('aadsts50173') !== -1 ||
+            msg.indexOf('aadsts700084') !== -1
+        );
+    }
+
+    async function clearMsalCache(instance) {
+        try {
+            const accounts = instance && typeof instance.getAllAccounts === 'function' ? instance.getAllAccounts() : [];
+            if (typeof instance.clearCache === 'function') {
+                try {
+                    await instance.clearCache();
+                } catch {
+                    // ignore – wir versuchen es danach noch manuell
+                }
+            }
+            (accounts || []).forEach((acc) => {
+                if (acc && typeof instance.logoutSilent === 'function') {
+                    instance.logoutSilent({ account: acc }).catch(() => {});
+                }
+            });
+        } catch {
+            // ignore
+        }
+        try {
+            const removeIf = (store, predicate) => {
+                const keys = [];
+                for (let i = 0; i < store.length; i++) {
+                    const k = store.key(i);
+                    if (k && predicate(k)) keys.push(k);
+                }
+                keys.forEach((k) => {
+                    try {
+                        store.removeItem(k);
+                    } catch {
+                        // ignore
+                    }
+                });
+            };
+            const isMsalKey = (k) =>
+                k.indexOf('msal.') === 0 ||
+                k.indexOf('msal-') === 0 ||
+                k.indexOf('login.microsoftonline.com') !== -1 ||
+                k.indexOf('login.windows.net') !== -1 ||
+                /[-.]?msal[-.]/i.test(k);
+            removeIf(localStorage, isMsalKey);
+            removeIf(sessionStorage, isMsalKey);
+        } catch {
+            // ignore
+        }
+    }
+
     async function acquireToken(scopes) {
         const instance = await ensurePca();
         let accounts = instance.getAllAccounts();
@@ -183,13 +265,29 @@
         try {
             return (await instance.acquireTokenSilent(req)).accessToken;
         } catch (e) {
-            if (isInteractionRequired(e)) {
+            // Bei kaputtem/abgelaufenem MSAL-Cache („Token contains an invalid signature",
+            // invalid_grant, AADSTS70008/50173/700084 etc.) den lokalen Cache leeren,
+            // damit der frische Login-Redirect tatsächlich frische Tokens holt.
+            if (looksLikeBrokenCache(e)) {
+                try {
+                    await clearMsalCache(instance);
+                } catch {
+                    // ignore
+                }
+            }
+            if (isInteractionRequired(e) || looksLikeBrokenCache(e)) {
                 try {
                     sessionStorage.setItem(POST_LOGIN_KEY, window.location.href);
                 } catch {
                     // ignore
                 }
-                await instance.acquireTokenRedirect({ ...req, redirectStartPage: window.location.href });
+                const redirectReq = { ...req, redirectStartPage: window.location.href };
+                // Beim "Cache broken" zusätzlich Consent erzwingen, damit der Tenant
+                // den User korrekt neu authentifiziert.
+                if (looksLikeBrokenCache(e)) {
+                    redirectReq.prompt = 'select_account';
+                }
+                await instance.acquireTokenRedirect(redirectReq);
                 throw new Error('Weiterleitung zur Anmeldung …');
             }
             throw e;
@@ -289,6 +387,52 @@
         }
     }
 
+    async function forceFreshLogin() {
+        try {
+            const instance = await ensurePca();
+            await clearMsalCache(instance);
+        } catch {
+            // ignore – wir versuchen den Redirect trotzdem
+        }
+        try {
+            return await login(DEFAULT_SCOPES, { prompt: 'select_account' });
+        } catch {
+            // bei Redirect ohnehin kein weiterer Code mehr
+        }
+    }
+
+    function ensureSwitchAccountButton() {
+        const widget = document.getElementById('ms365AuthWidget');
+        if (!widget) return null;
+        let extra = document.getElementById('ms365AuthSwitchBtn');
+        if (extra) return extra;
+        const a = getAccount();
+        if (!a) return null;
+        extra = document.createElement('button');
+        extra.id = 'ms365AuthSwitchBtn';
+        extra.type = 'button';
+        extra.className = 'btn';
+        extra.title = 'Konto wechseln / Anmeldung zurücksetzen (löscht den lokalen MSAL-Cache und meldet frisch an)';
+        extra.style.margin = '0';
+        extra.style.padding = '8px 12px';
+        extra.style.borderRadius = '10px';
+        extra.style.background = 'rgba(255,255,255,0.85)';
+        extra.style.color = '#32325d';
+        extra.style.border = '1px solid rgba(94, 114, 228, 0.35)';
+        extra.style.fontSize = '0.88em';
+        extra.style.fontWeight = '700';
+        extra.innerHTML = '<i class="bi bi-arrow-repeat"></i>Konto wechseln';
+        extra.onclick = () => forceFreshLogin().catch(() => {});
+        const badge = document.getElementById('ms365AuthBadge');
+        const mainBtn = document.getElementById('ms365AuthBtn');
+        if (badge && mainBtn && badge.parentElement) {
+            badge.parentElement.insertBefore(extra, mainBtn);
+        } else {
+            widget.appendChild(extra);
+        }
+        return extra;
+    }
+
     function setWidgetState() {
         const badgeText = document.getElementById('ms365AuthBadgeText');
         const btn = document.getElementById('ms365AuthBtn');
@@ -305,6 +449,12 @@
                 btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i>Anmelden';
                 btn.onclick = () => login(DEFAULT_SCOPES).catch(() => {});
             }
+        }
+        const switchBtn = document.getElementById('ms365AuthSwitchBtn');
+        if (a) {
+            ensureSwitchAccountButton();
+        } else if (switchBtn && switchBtn.parentElement) {
+            switchBtn.parentElement.removeChild(switchBtn);
         }
     }
 
